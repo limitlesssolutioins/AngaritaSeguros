@@ -1,6 +1,6 @@
 // src/app/api/persona/[documento]/route.ts
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 interface PersonaData {
   documento: string;
@@ -36,7 +36,7 @@ const generateMockData = (documento: string): PersonaData => {
   };
 };
 
-export async function GET(request: Request, { params }: { params: { documento: string } }) {
+export async function GET(request: NextRequest, { params }: { params: { documento: string } }) {
   const documento = params.documento;
 
   if (!documento) {
