@@ -1,0 +1,131 @@
+.footer {
+  background-color: #003440;
+  color: #E9ECEF;
+  padding-top: 2.5rem;
+  padding-bottom: 2.5rem;
+}
+
+.container {
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  max-width: 1200px; /* Added max-width for better control */
+}
+
+.md_flex_between {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem; /* Increased gap for better separation */
+  text-align: center; /* Center content on small screens */
+}
+
+@media (min-width: 768px) {
+  .md_flex_between {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* Three equal columns */
+    gap: 2rem; /* Gap between columns */
+    text-align: left; /* Align text to left on larger screens */
+  }
+
+  .footerSection:not(:last-child) {
+    border-right: 1px solid #005f73; /* Vertical separator */
+    padding-right: 2rem; /* Space for the separator */
+  }
+}
+
+.footerSection {
+  /* Basic styling for each section */
+}
+
+.socialIcons {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+@media (min-width: 768px) {
+  .socialIcons {
+    justify-content: flex-start;
+  }
+}
+
+.socialLink {
+  color: #E9ECEF;
+  font-size: 1.5rem;
+  transition: color 0.2s ease-in-out;
+}
+
+.socialLink:hover {
+  color: #ee9b00;
+}
+
+.mb_6_md_mb_0 {
+  margin-bottom: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .mb_6_md_mb_0 {
+    margin-bottom: 0;
+  }
+}
+
+.title {
+  font-size: 1.875rem; /* Larger title */
+  line-height: 2.25rem;
+  font-weight: 700;
+  color: #fff; /* Ensure title is white */
+}
+
+.subtitle {
+  margin-top: 0.75rem;
+  color: #CED4DA;
+  font-size: 1rem;
+}
+
+.links_title {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  font-weight: 600;
+  color: #fff; /* Ensure title is white */
+  margin-bottom: 1rem; /* Added margin for separation */
+}
+
+.links_list {
+  list-style: none; /* Remove bullet points */
+  padding: 0;
+  margin: 0;
+}
+
+.links_list li {
+  margin-bottom: 0.75rem; /* Adjusted spacing between list items */
+}
+
+.links_list li:last-child {
+  margin-bottom: 0;
+}
+
+.link {
+  color: #E9ECEF; /* Default link color */
+  text-decoration: none; /* Remove underline */
+  transition: color 0.2s ease-in-out;
+}
+
+.link:hover {
+  color: #ee9b00; /* Hover color */
+  text-decoration: underline; /* Add underline on hover */
+}
+
+.hr {
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+  border-color: #005f73;
+  border-width: 1px;
+}
+
+.text_center {
+  text-align: center;
+  color: #CED4DA;
+  font-size: 0.9rem;
+}

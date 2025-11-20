@@ -1,0 +1,25 @@
+.newFilesSection {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: #f0f8ff;
+  border: 1px solid #cce5ff;
+  border-radius: 8px;
+}
+
+.saveButton {
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.saveButton:hover {
+  background-color: #0056b3;
+}
+
+.attachmentList {
+  margin-top: 1.5rem;
+}

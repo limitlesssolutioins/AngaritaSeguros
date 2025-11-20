@@ -1,0 +1,51 @@
+.fabContainer {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.chatBubble {
+  background-color: #007bff;
+  color: #ffffff;
+  padding: 0.75rem 1rem;
+  border-radius: 1.5rem 1.5rem 0 1.5rem;
+  font-size: 0.9rem;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  white-space: nowrap;
+  animation: fadeInOut 5s forwards;
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translateX(20px); }
+  10% { opacity: 1; transform: translateX(0); }
+  90% { opacity: 1; transform: translateX(0); }
+  100% { opacity: 0; transform: translateX(20px); }
+}
+
+.fabButton {
+  background-color: #007bff;
+  color: #ffffff;
+  border: none;
+  border-radius: 50%;
+  width: 3.5rem;
+  height: 3.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transition: background-color 0.3s ease-in-out, transform 0.2s ease-in-out;
+}
+
+.fabButton:hover {
+  background-color: #0056b3;
+  transform: scale(1.05);
+}
+
+.fabIcon {
+  font-size: 1.8rem;
+}

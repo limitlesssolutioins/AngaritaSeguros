@@ -1,103 +1,195 @@
-import Image from "next/image";
+'use client';
+
+import { useState, FC, SVGProps } from 'react';
+import { useRouter } from 'next/navigation';
+import { FaCar, FaHeartbeat, FaUsers, FaShieldAlt, FaPaw, FaStethoscope, FaPiggyBank } from 'react-icons/fa';
+import AseguradorasSection from '@/components/home/AseguradorasSection';
+import BeneficiosSection from '@/components/home/BeneficiosSection';
+import TestimoniosSection from '@/components/home/TestimoniosSection';
+import NoticiasSection from '@/components/home/NoticiasSection';
+import FadeIn from '@/components/animation/FadeIn';
+import styles from './page.module.css';
+
+const quoteTypes = [
+  { key: 'vehiculo', label: 'Vehículo', icon: FaCar },
+  { key: 'salud', label: 'Salud', icon: FaHeartbeat },
+  { key: 'vida', label: 'Vida', icon: FaUsers },
+  { key: 'soat', label: 'SOAT', icon: FaShieldAlt },
+  { key: 'mascotas', label: 'Mascotas', icon: FaPaw },
+  { key: 'cirugia', label: 'Cirugía', icon: FaStethoscope },
+  { key: 'financiacion', label: 'Financiación', icon: FaPiggyBank },
+];
+
+const quoteConfig: {[key: string]: any} = {
+  vehiculo: {
+    title: 'Cotiza tu Seguro en Segundos',
+    description: 'Encuentra el seguro ideal para tu vehículo. Compara precios y coberturas de las mejores aseguradoras.',
+    label: 'Ingresa la placa de tu vehículo',
+    placeholder: 'EJ: ABC-123',
+    param: 'placa',
+    route: '/cotizacion/vehiculo/confirmar',
+  },
+  salud: {
+    title: 'Las mejores opciones para tu bienestar',
+    description: 'Descubre las mejores opciones en pólizas de salud, medicina prepagada y otros planes para tu bienestar.',
+    label: 'Ingresa tu número de documento',
+    placeholder: 'EJ: 123456789',
+    param: 'documento',
+    route: '/cotizacion/salud/confirmar',
+  },
+  vida: {
+    title: 'Protege el futuro de los que más quieres',
+    description: 'Asegura la tranquilidad de tu familia con un seguro de vida adaptado a tus necesidades.',
+    label: 'Ingresa tu número de documento',
+    placeholder: 'EJ: 123456789',
+    param: 'documento',
+    route: '/cotizacion/vida/confirmar',
+  },
+  soat: {
+    title: 'Tu SOAT, rápido y sin complicaciones',
+    description: 'Compra tu SOAT obligatorio de forma fácil y rápida con nosotros.',
+    label: 'Ingresa la placa de tu vehículo',
+    placeholder: 'EJ: ABC-123',
+    param: 'placa',
+    route: '/cotizacion/vehiculo/confirmar',
+  },
+  mascotas: {
+    title: 'El mejor cuidado para tu mejor amigo',
+    description: 'Protege a tu mascota con un seguro que cubre desde consultas hasta emergencias.',
+    label: 'Ingresa tu número de documento',
+    placeholder: 'EJ: 123456789',
+    param: 'documento',
+    route: '/cotizacion/mascotas/confirmar',
+  },
+  cirugia: {
+    title: 'Tranquilidad ante imprevistos quirúrgicos',
+    description: 'Cobertura para complicaciones en procedimientos quirúrgicos, para que solo te preocupes por tu recuperación.',
+    label: 'Ingresa tu número de documento',
+    placeholder: 'EJ: 123456789',
+    param: 'documento',
+    route: '/cotizacion/cirugia/cotizar',
+  },
+  financiacion: {
+    title: 'Financia el vehículo de tus sueños',
+    description: 'Te ayudamos a encontrar la mejor opción de financiación para que estrenes vehículo.',
+    label: 'Ingresa tu número de documento',
+    placeholder: 'EJ: 123456789',
+    param: 'documento',
+    route: '/cotizacion/financiacion/confirmar',
+  },
+};
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [tipoCotizacion, setTipoCotizacion] = useState<string | null>(null);
+  const [valor, setValor] = useState('');
+  const router = useRouter();
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const handleCotizar = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!valor.trim() || !tipoCotizacion) return;
+
+    const config = quoteConfig[tipoCotizacion];
+    if (config) {
+      const queryParams = new URLSearchParams({ [config.param]: valor });
+      if (tipoCotizacion === 'soat') {
+        queryParams.set('tipo', 'soat');
+      }
+      router.push(`${config.route}?${queryParams.toString()}`);
+    }
+  };
+
+  const currentConfig = tipoCotizacion ? quoteConfig[tipoCotizacion] : null;
+
+  return (
+    <>
+      <section className={styles.hero}>
+        <div className={styles.container}>
+          <div className={styles.items_center_lg_flex}>
+            <div className={styles.w_full_lg_w_3_10}>
+              <div className={styles.lg_max_w_lg}>
+                {currentConfig ? (
+                  <FadeIn key={tipoCotizacion} duration={0.5}>
+                    <h1 className={styles.title}>
+                      {currentConfig.title}
+                    </h1>
+                    <p className={styles.description}>
+                      {currentConfig.description}
+                    </p>
+                  </FadeIn>
+                ) : (
+                  <FadeIn duration={0.5}>
+                    <h1 className={styles.title}>Compara y Elige tu Seguro Ideal</h1>
+                    <p className={styles.description}>
+                      Selecciona uno de nuestros servicios a la derecha para encontrar la mejor opción para ti. Rápido, fácil y seguro.
+                    </p>
+                  </FadeIn>
+                )}
+              </div>
+            </div>
+            <div className={styles.form_container_wrapper}>
+              <FadeIn duration={0.5} delay={0.2} className={styles.w_full}>
+                <div className={styles.InsuranceApp}>
+                  <div className={styles.quote_types_container}>
+                    {quoteTypes.map((type) => {
+                      const Icon = type.icon;
+                      return (
+                        <button
+                          key={type.key}
+                          type="button"
+                          onClick={() => setTipoCotizacion(type.key)}
+                          className={`${styles.quote_type_button} ${tipoCotizacion === type.key ? styles.quote_type_button_selected : ''}`}>
+                          <Icon className={styles.quote_type_icon} />
+                          <span className={styles.quote_type_label}>{type.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className={styles.form_wrapper}>
+                    {currentConfig && (
+                      <FadeIn key={tipoCotizacion ? tipoCotizacion + 'form' : 'empty'}>
+                        <form onSubmit={handleCotizar}>
+                          <div className={styles.mb_6}>
+                            <label htmlFor="valor-cotizacion" className={styles.form_label}>
+                              {currentConfig.label}
+                            </label>
+                            <input
+                              id="valor-cotizacion"
+                              type="text" 
+                              value={valor}
+                              onChange={(e) => setValor(e.target.value.toUpperCase())}
+                              placeholder={currentConfig.placeholder}
+                              className={styles.form_input}
+                              required
+                            />
+                          </div>
+
+                          <button
+                            type="submit"
+                            className={styles.submit_button}>
+                            Cotizar Ahora
+                          </button>
+                          <div className={styles.terms_container}>
+                            <input type="checkbox" id="terminos" name="terminos" className={styles.terms_checkbox} required />
+                            <label htmlFor="terminos" className={styles.terms_label}>
+                              Acepto los <a href="/terminos" className={styles.terms_link}>Términos y Condiciones</a> y la <a href="/politica-de-datos" className={styles.terms_link}>Política de Manejo de Datos</a>.
+                            </label>
+                          </div>
+                        </form>
+                      </FadeIn>
+                    )}
+                  </div>
+                </div>
+              </FadeIn>
+            </div>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+      </section>
+
+      <AseguradorasSection />
+      <BeneficiosSection />
+      <TestimoniosSection />
+      <NoticiasSection />
+    </>
   );
 }

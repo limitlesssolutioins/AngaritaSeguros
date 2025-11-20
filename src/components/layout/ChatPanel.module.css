@@ -1,0 +1,131 @@
+.chatPanelContainer {
+  position: fixed;
+  bottom: 1.5rem;
+  right: -365px; /* Start off-screen (width + right padding) */
+  width: 350px;
+  height: 500px;
+  background-color: #ffffff;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: right 0.3s ease-in-out; /* Animate right property */
+}
+
+.chatPanelContainer.isOpen {
+  right: 1.5rem; /* Slide in to 1.5rem from right */
+}
+
+.chatHeader {
+  background-color: #003440;
+  color: #ffffff;
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  color: #ffffff;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.chatMessages {
+  flex-grow: 1;
+  padding: 1rem;
+  overflow-y: auto;
+  background-color: #f0f2f5;
+  display: flex;
+  flex-direction: column;
+}
+
+.messageBubble {
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  margin-bottom: 0.5rem;
+  max-width: 80%;
+  color: #333;
+  line-height: 1.4;
+}
+
+.bot {
+  background-color: #e2e2e2;
+  align-self: flex-start;
+}
+
+.user {
+  background-color: #007bff;
+  color: #fff;
+  align-self: flex-end;
+}
+
+.loading span {
+    animation: blink 1.4s infinite both;
+    font-size: 1.5rem;
+}
+
+.loading span:nth-child(2) {
+    animation-delay: .2s;
+}
+
+.loading span:nth-child(3) {
+    animation-delay: .4s;
+}
+
+@keyframes blink {
+    0% {
+        opacity: .2;
+    }
+    20% {
+        opacity: 1;
+    }
+    100% {
+        opacity: .2;
+    }
+}
+
+.chatInputForm {
+  display: flex;
+  padding: 1rem;
+  border-top: 1px solid #e0e0e0;
+  background-color: #ffffff;
+}
+
+.chatInput {
+  flex-grow: 1;
+  border: 1px solid #ccc;
+  border-radius: 0.25rem;
+  padding: 0.5rem;
+  margin-right: 0.5rem;
+  font-size: 1rem;
+}
+
+.chatInput:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+.sendButton {
+  background-color: #007bff;
+  color: #ffffff;
+  border: none;
+  border-radius: 0.25rem;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.sendButton:hover {
+  background-color: #0056b3;
+}

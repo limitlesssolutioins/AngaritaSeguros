@@ -1,0 +1,38 @@
+.navbar {
+  background-color: #003440; /* Dark background for the dashboard navbar */
+  padding: 1rem 2rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.container {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.navLink {
+  color: #FFFFFF;
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+  transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
+  display: flex;
+  align-items: center;
+}
+
+.navIcon {
+  margin-right: 0.5rem;
+  font-size: 1.2rem;
+}
+
+.navLink:hover {
+  background-color: #005f73;
+  color: #FFFFFF;
+}
+
+.activeNavLink {
+  background-color: #0a9396; /* Highlight color for active link */
+  font-weight: bold;
+}

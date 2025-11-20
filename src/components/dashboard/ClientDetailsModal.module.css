@@ -1,0 +1,230 @@
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: blur(5px);
+  }
+  
+  .modalContent {
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    width: 90%;
+    max-width: 650px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  
+  .tabNav {
+    display: flex;
+    border-bottom: 1px solid #e9ecef;
+    padding: 0 1.5rem;
+  }
+  
+  .tabButton {
+    padding: 1rem 1.5rem;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #868e96;
+    position: relative;
+    transition: color 0.2s;
+  }
+  
+  .tabButton:hover {
+    color: #495057;
+  }
+  
+  .activeTab {
+    color: #007bff;
+  }
+  
+  .activeTab::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background-color: #007bff;
+  }
+  
+  .modalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid #e9ecef;
+  }
+  
+  .clientIdentifier {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .avatar {
+    font-size: 2.5rem;
+    color: #495057;
+  }
+  
+  .clientName {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #212529;
+  }
+  
+  .closeButton {
+    background: #f1f3f5;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #868e96;
+    transition: background-color 0.2s, color 0.2s;
+  }
+  
+  .closeButton:hover {
+    background-color: #e9ecef;
+    color: #495057;
+  }
+  
+  .modalBody {
+    padding: 1.5rem;
+    flex-grow: 1;
+    overflow-y: auto;
+    background-color: #f8f9fa;
+  }
+  
+  .infoSection, .actionsSection {
+    margin-bottom: 2rem;
+  }
+  
+  .infoSection h3, .actionsSection h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #dee2e6;
+  }
+  
+  .infoGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+  
+  .infoItem {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  
+  .infoIcon {
+    font-size: 1.2rem;
+    color: #868e96;
+    width: 20px;
+    text-align: center;
+  }
+  
+  .infoLabel {
+    font-size: 0.85rem;
+    color: #6c757d;
+    font-weight: 500;
+  }
+  
+  .infoValue {
+    font-size: 0.95rem;
+    color: #212529;
+    font-weight: 500;
+  }
+  
+  .actionButtonsContainer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  
+  .actionButton {
+    padding: 0.6rem 1rem;
+    border-radius: 6px;
+    border: 1px solid #dee2e6;
+    background-color: #fff;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #495057;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
+  }
+  
+  .actionButton:hover {
+    background-color: #f1f3f5;
+    border-color: #ced4da;
+  }
+  
+  .modalFooter {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding: 1.5rem;
+    background-color: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+  }
+  
+  .footerButton {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.2s ease-in-out;
+  }
+  
+  .primary {
+    background-color: #007bff;
+    color: #fff;
+    border-color: #007bff;
+  }
+  .primary:hover {
+    background-color: #0056b3;
+    border-color: #0056b3;
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.25);
+  }
+  
+  .secondary {
+    background-color: transparent;
+    color: #495057;
+    border-color: #ced4da;
+  }
+  .secondary:hover {
+    background-color: #f1f3f5;
+    border-color: #adb5bd;
+  }
+  
+  .danger {
+    background-color: transparent;
+    color: #dc3545;
+    border-color: #dc3545;
+  }
+  .danger:hover {
+    background-color: #dc3545;
+    color: #fff;
+  }

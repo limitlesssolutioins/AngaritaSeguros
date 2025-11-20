@@ -1,0 +1,237 @@
+.pageContainer {
+  background-color: #f8f9fa; /* bg-gray-50 */
+  padding-top: 3rem; /* py-12 */
+  padding-bottom: 3rem; /* py-12 */
+  min-height: 70vh; /* min-h-[70vh] */
+}
+
+.container {
+  max-width: 1200px; /* container */
+  margin-left: auto; /* mx-auto */
+  margin-right: auto; /* mx-auto */
+  padding-left: 1.5rem; /* px-6 */
+  padding-right: 1.5rem; /* px-6 */
+}
+
+.textCenter {
+  text-align: center;
+}
+
+.mb10 {
+  margin-bottom: 2.5rem; /* mb-10 */
+}
+
+.h1 {
+  font-size: 2.25rem; /* text-4xl */
+  font-weight: 700; /* font-bold */
+  color: #007bff; /* text-brand-blue */
+}
+
+.p {
+  font-size: 1.125rem; /* text-lg */
+  color: #6c757d; /* text-brand-gray */
+  margin-top: 0.5rem; /* mt-2 */
+}
+
+.gridContainer {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr)); /* grid-cols-1 */
+  gap: 2rem; /* gap-8 */
+}
+
+@media (min-width: 768px) {
+  .gridContainer {
+    grid-template-columns: repeat(2, minmax(0, 1fr)); /* md:grid-cols-2 */
+  }
+}
+
+@media (min-width: 1024px) {
+  .gridContainer {
+    grid-template-columns: repeat(3, minmax(0, 1fr)); /* lg:grid-cols-3 */
+  }
+}
+
+.errorContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh; /* min-h-[60vh] */
+}
+
+.errorBox {
+  text-align: center;
+  padding: 2rem; /* p-8 */
+  background-color: #ffebeb; /* bg-red-100 */
+  border: 1px solid #ffcccc; /* border border-red-400 */
+  color: #cc0000; /* text-red-700 */
+  border-radius: 0.5rem; /* rounded-lg */
+}
+
+.errorTitle {
+  font-size: 1.25rem; /* text-xl */
+  font-weight: 700; /* font-bold */
+  margin-bottom: 1rem; /* mb-4 */
+}
+
+.errorButton {
+  margin-top: 1.5rem; /* mt-6 */
+  background-color: #dc3545; /* bg-red-600 */
+  color: white; /* text-white */
+  font-weight: 700; /* font-bold */
+  padding-top: 0.5rem; /* py-2 */
+  padding-bottom: 0.5rem; /* py-2 */
+  padding-left: 1rem; /* px-4 */
+  padding-right: 1rem; /* px-4 */
+  border-radius: 0.5rem; /* rounded-lg */
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke; /* transition-colors */
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); /* ease-in-out */
+  transition-duration: 150ms; /* duration-150 */
+}
+
+.errorButton:hover {
+  background-color: #c82333; /* hover:bg-red-700 */
+}
+
+.mainContentContainer {
+  background-color: #f8f9fa; /* bg-gray-50 */
+  padding-top: 3rem; /* py-12 */
+  padding-bottom: 3rem; /* py-12 */
+  min-height: 70vh; /* min-h-[70vh] */
+}
+
+.mainContentTitle {
+  font-size: 2.25rem; /* text-4xl */
+  font-weight: 700; /* font-bold */
+  color: #007bff; /* text-brand-blue */
+  margin-bottom: 3rem; /* mb-12 */
+}
+
+.mainContentSubtitle {
+  font-size: 1.125rem; /* text-lg */
+  color: #6c757d; /* text-brand-gray */
+  margin-top: 0.5rem; /* mt-2 */
+}
+
+.policyGrid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr)); /* grid-cols-1 */
+  gap: 2rem; /* gap-8 */
+  align-items: flex-start; /* items-start */
+}
+
+@media (min-width: 768px) {
+  .policyGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)); /* md:grid-cols-2 */
+  }
+}
+
+@media (min-width: 1024px) {
+  .policyGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)); /* lg:grid-cols-3 */
+  }
+}
+
+.policyCard {
+  background-color: white; /* bg-white */
+  border-radius: 0.75rem; /* rounded-xl */
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-lg */
+  padding: 1.5rem; /* p-6 */
+  border: 1px solid #e5e7eb; /* border border-gray-200 */
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke; /* transition */
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); /* ease-in-out */
+  transition-duration: 150ms; /* duration-150 */
+  position: relative;
+}
+
+.policyCard:hover {
+  border-color: #007bff; /* hover:border-brand-blue */
+}
+
+.policyHeader {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem; /* mb-4 */
+}
+
+.policyLogo {
+  height: 2.5rem; /* h-10 */
+  margin-right: 1rem; /* mr-4 */
+}
+
+.policyAseguradora {
+  font-size: 1.5rem; /* text-2xl */
+  font-weight: 700; /* font-bold */
+  color: #007bff; /* text-brand-blue */
+}
+
+.policyPlan {
+  font-size: 1.25rem; /* text-xl */
+  font-weight: 600; /* font-semibold */
+  color: #6c757d; /* text-brand-gray */
+  margin-bottom: 0.5rem; /* mb-2 */
+}
+
+.policyPrice {
+  font-size: 1.875rem; /* text-3xl */
+  font-weight: 800; /* font-extrabold */
+  color: #007bff; /* text-brand-blue */
+  margin-bottom: 1rem; /* mb-4 */
+}
+
+.policyPriceSpan {
+  font-size: 1.125rem; /* text-lg */
+  font-weight: 500; /* font-medium */
+  color: #6c757d; /* text-gray-500 */
+}
+
+.policyDetails {
+  color: #6c757d; /* text-brand-gray */
+  margin-bottom: 1rem; /* mb-4 */
+}
+
+.policyBenefits {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  margin-bottom: 1.5rem; /* mb-6 */
+  color: #6c757d; /* text-brand-gray */
+}
+
+.policyBenefitItem {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem; /* space-y-2 */
+}
+
+.policyBenefitIcon {
+  width: 1.25rem; /* w-5 */
+  height: 1.25rem; /* h-5 */
+  color: #fd7e14; /* text-brand-orange */
+  margin-right: 0.75rem; /* mr-3 */
+  flex-shrink: 0;
+}
+
+.policyButton {
+  width: 100%; /* w-full */
+  background-color: #007bff; /* bg-brand-blue */
+  color: white; /* text-white */
+  font-weight: 700; /* font-bold */
+  padding-top: 0.75rem; /* py-3 */
+  padding-bottom: 0.75rem; /* py-3 */
+  padding-left: 1rem; /* px-4 */
+  padding-right: 1rem; /* px-4 */
+  border-radius: 0.5rem; /* rounded-lg */
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke; /* transition-colors */
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); /* ease-in-out */
+  transition-duration: 150ms; /* duration-150 */
+}
+
+.policyButton:hover {
+  background-color: rgba(0, 123, 255, 0.9); /* hover:bg-opacity-90 */
+}
+
+.policyButton:focus {
+  outline: 2px solid transparent; /* focus:outline-none */
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px #007bff, 0 0 0 4px rgba(0, 123, 255, 0.5); /* focus:ring-2 focus:ring-brand-blue focus:ring-offset-2 */
+}
