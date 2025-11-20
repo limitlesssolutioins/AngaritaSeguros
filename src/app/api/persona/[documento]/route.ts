@@ -36,8 +36,8 @@ const generateMockData = (documento: string): PersonaData => {
   };
 };
 
-export async function GET(request: NextRequest, { params }: { params: { documento: string } }) {
-  const documento = params.documento;
+export async function GET(request: NextRequest, context: { params: { documento: string } }) {
+  const documento = context.params.documento;
 
   if (!documento) {
     return NextResponse.json({ message: 'Documento inválido.' }, { status: 400 });
