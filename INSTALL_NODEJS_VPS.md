@@ -110,7 +110,7 @@ Una vez que Node.js está listo, necesitas llevar el código de tu aplicación a
 
     ```bash
     cd /var/www/ # O el directorio que prefieras
-    git clone https://github.com/tu_usuario/tu_repositorio.git
+    git clone https://github.com/limitlesssolutioins/AngaritaSeguros.git
     ```
     Reemplaza `https://github.com/tu_usuario/tu_repositorio.git` con la URL real de tu repositorio.
 

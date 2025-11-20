@@ -1,3 +1,4 @@
+'use client';
 import { useState, useEffect } from 'react';
 import styles from './CumplimientoModule.module.css';
 import AddCumplimientoModal from './AddCumplimientoModal';
