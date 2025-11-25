@@ -86,16 +86,8 @@ export default function Home() {
 
   const handleCotizar = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!valor.trim() || !tipoCotizacion) return;
-
-    const config = quoteConfig[tipoCotizacion];
-    if (config) {
-      const queryParams = new URLSearchParams({ [config.param]: valor });
-      if (tipoCotizacion === 'soat') {
-        queryParams.set('tipo', 'soat');
-      }
-      router.push(`${config.route}?${queryParams.toString()}`);
-    }
+    alert('Esta funcionalidad estará disponible próximamente.');
+    console.log('Intento de cotización:', { tipoCotizacion, valor });
   };
 
   const currentConfig = tipoCotizacion ? quoteConfig[tipoCotizacion] : null;

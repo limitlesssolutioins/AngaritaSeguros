@@ -2,6 +2,8 @@
 
 import { NextResponse } from 'next/server';
 
+// This interface should match the data structure of the real vehicle API response.
+// Adjust it as necessary.
 interface VehiculoData {
   placa: string;
   marca: string;
@@ -15,50 +17,6 @@ interface VehiculoData {
   identificacionPropietario: string;
 }
 
-/**
- * Generates deterministic mock vehicle data based on a license plate.
- * @param placa The license plate to generate data for.
- * @returns A VehiculoData object.
- */
-const generateMockData = (placa: string): VehiculoData => {
-  const letters = placa.substring(0, 3).toUpperCase();
-  const numbers = placa.replace(/[^0-9]/g, '').slice(-3); // Get last 3 digits
-
-  const marcas = ['Renault', 'Chevrolet', 'Mazda', 'Kia', 'Nissan', 'Toyota', 'Ford', 'Volkswagen'];
-  const lineas: { [key: string]: string[] } = {
-    Renault: ['Logan', 'Duster', 'Sandero', 'Kwid'],
-    Chevrolet: ['Onix', 'Spark', 'Tracker', 'Captiva'],
-    Mazda: ['2', '3', 'CX-5', 'CX-30'],
-    Kia: ['Picanto', 'Rio', 'Sportage', 'Seltos'],
-    Nissan: ['Versa', 'March', 'Kicks', 'Frontier'],
-    Toyota: ['Corolla', 'Hilux', 'Yaris', 'RAV4'],
-    Ford: ['Fiesta', 'Focus', 'Escape', 'Ranger'],
-    Volkswagen: ['Gol', 'Jetta', 'T-Cross', 'Amarok'],
-  };
-
-  const marcaSeed = (letters.charCodeAt(0) + letters.charCodeAt(1)) % marcas.length;
-  const marca = marcas[marcaSeed];
-  const lineaSeed = placa.charCodeAt(2) % lineas[marca].length;
-  const linea = lineas[marca][lineaSeed];
-  
-  const numericPart = parseInt(numbers, 10) || 123;
-  const modelo = 2010 + (numericPart % 15); // Year between 2010 and 2024
-  const cilindraje = 1200 + (numericPart % 8) * 100; // 1200 to 1900
-
-  return {
-    placa: placa.toUpperCase(),
-    marca,
-    linea,
-    modelo,
-    cilindraje,
-    clase: 'Automóvil',
-    tipoServicio: 'Particular',
-    color: ['Rojo', 'Gris Plata', 'Blanco', 'Negro', 'Azul'][numericPart % 5],
-    propietario: `Propietario de ${placa.toUpperCase()}`,
-    identificacionPropietario: `10${numericPart.toString().padStart(8, '0')}`,
-  };
-};
-
 export async function GET(request: Request, { params }: { params: { placa: string } }) {
   const placa = params.placa;
 
@@ -66,15 +24,53 @@ export async function GET(request: Request, { params }: { params: { placa: strin
     return NextResponse.json({ message: 'Placa inválida.' }, { status: 400 });
   }
 
-  // Simulate network delay
-  await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000));
+  // --- CONEXIÓN A LA API REAL ---
+  // Reemplaza la URL de ejemplo con la URL de tu API real.
+  const API_URL = `https://api.ejemplo.com/vehiculos/${placa}`;
+  
+  // Si tu API necesita una clave (API Key), agrégala aquí.
+  // const API_KEY = 'TU_API_KEY_AQUI';
 
-  // Simulate a small chance of failure for demonstration purposes
-  if (placa.toUpperCase().includes('FAIL')) {
-    return NextResponse.json({ message: 'Error simulado al consultar la placa.' }, { status: 500 });
+  try {
+    const apiResponse = await fetch(API_URL, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        // 'Authorization': `Bearer ${API_KEY}` // Descomenta y ajusta si tu API usa autenticación.
+      },
+    });
+
+    if (!apiResponse.ok) {
+      // Si la API externa responde con un error (ej. 404, 500), lo capturamos aquí.
+      const errorData = await apiResponse.json().catch(() => ({})); // Intenta obtener el cuerpo del error
+      console.error(`Error from external API: ${apiResponse.status}`, errorData);
+      return NextResponse.json({ message: `Error al consultar la placa en el servicio externo. Estatus: ${apiResponse.status}` }, { status: apiResponse.status });
+    }
+
+    const dataFromApi = await apiResponse.json();
+
+    // --- ADAPTACIÓN DE DATOS ---
+    // La estructura de 'dataFromApi' puede ser diferente a 'VehiculoData'.
+    // Aquí debes mapear los campos de la respuesta de la API a nuestra interfaz.
+    // Ejemplo:
+    const vehiculoData: VehiculoData = {
+      placa: dataFromApi.placa || placa.toUpperCase(),
+      marca: dataFromApi.info_vehiculo?.marca || 'Marca no encontrada',
+      linea: dataFromApi.info_vehiculo?.linea || 'Línea no encontrada',
+      modelo: dataFromApi.anio || 0,
+      cilindraje: dataFromApi.motor?.cilindraje || 0,
+      clase: dataFromApi.clase_vehiculo || 'No especificada',
+      tipoServicio: dataFromApi.tipo_servicio || 'No especificado',
+      color: dataFromApi.color_primario || 'No especificado',
+      propietario: `${dataFromApi.propietario?.nombres || ''} ${dataFromApi.propietario?.apellidos || ''}`.trim(),
+      identificacionPropietario: dataFromApi.propietario?.documento || 'No especificada',
+    };
+    // FIN DEL EJEMPLO DE MAPEADO - AJÚSTALO A TUS NECESIDADES
+
+    return NextResponse.json(vehiculoData);
+
+  } catch (error) {
+    console.error('Failed to fetch vehicle data:', error);
+    return NextResponse.json({ message: 'Error interno del servidor al intentar conectar con la API de vehículos.' }, { status: 500 });
   }
-
-  const vehiculoData = generateMockData(placa);
-
-  return NextResponse.json(vehiculoData);
 }
