@@ -11,13 +11,16 @@ import Dropzone from '../ui/Dropzone';
 interface Policy {
   id: string;
   etiqueta: string;
-  titularPoliza: string; // Renamed from 'nombre'
+  titularPoliza: string;
   fechaExpedicion: string;
-  fechaVencimiento: string;
+  fechaInicioVigencia: string;
+  fechaTerminacionVigencia: string;
   aseguradora: string;
   valorPrimaNeta: number;
-  valorTotalAsegurado: number;
+  valorTotalAPagar: number;
   numeroPoliza: string;
+  numeroAnexos: number;
+  tipoAmparo: string;
   files?: string[];
 }
 
@@ -138,10 +141,13 @@ const CumplimientoModule = () => {
       'Etiqueta': p.etiqueta,
       'Aseguradora': p.aseguradora,
       'Número de Póliza': p.numeroPoliza,
+      'Tipo de Amparo': p.tipoAmparo,
+      'Número de Anexos': p.numeroAnexos,
       'Fecha de Expedición': new Date(p.fechaExpedicion).toLocaleDateString(),
-      'Fecha de Vencimiento': new Date(p.fechaVencimiento).toLocaleDateString(),
+      'Fecha Inicio Vigencia': new Date(p.fechaInicioVigencia).toLocaleDateString(),
+      'Fecha Fin Vigencia': new Date(p.fechaTerminacionVigencia).toLocaleDateString(),
       'Valor Prima Neta': p.valorPrimaNeta,
-      'Valor Total Asegurado': p.valorTotalAsegurado,
+      'Valor Total a Pagar': p.valorTotalAPagar,
     })));
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Pólizas de Cumplimiento");

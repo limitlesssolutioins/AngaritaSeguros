@@ -9,11 +9,14 @@ interface Policy {
   etiqueta?: string;
   titularPoliza?: string;
   fechaExpedicion?: string;
-  fechaVencimiento?: string;
+  fechaInicioVigencia?: string;
+  fechaTerminacionVigencia?: string;
   aseguradora?: string;
   valorPrimaNeta?: number;
-  valorTotalAsegurado?: number;
+  valorTotalAPagar?: number;
   numeroPoliza?: string;
+  numeroAnexos?: number;
+  tipoAmparo?: string;
 }
 
 interface Option {
@@ -30,10 +33,13 @@ const AddCumplimientoModal: React.FC<AddCumplimientoModalProps> = ({ onClose, in
   const [formData, setFormData] = useState({
     titularPoliza: '',
     fechaExpedicion: new Date().toISOString().split('T')[0],
-    fechaVencimiento: '',
+    fechaInicioVigencia: '',
+    fechaTerminacionVigencia: '',
     valorPrimaNeta: '',
-    valorTotalAsegurado: '',
+    valorTotalAPagar: '',
     numeroPoliza: '',
+    numeroAnexos: '',
+    tipoAmparo: '',
   });
   const [etiqueta, setEtiqueta] = useState<Option | null>(null);
   const [aseguradora, setAseguradora] = useState<Option | null>(null);
@@ -52,9 +58,12 @@ const AddCumplimientoModal: React.FC<AddCumplimientoModalProps> = ({ onClose, in
         titularPoliza: initialData.titularPoliza || '',
         numeroPoliza: initialData.numeroPoliza || '',
         valorPrimaNeta: initialData.valorPrimaNeta?.toString() || '',
-        valorTotalAsegurado: initialData.valorTotalAsegurado?.toString() || '',
+        valorTotalAPagar: initialData.valorTotalAPagar?.toString() || '',
         fechaExpedicion: initialData.fechaExpedicion ? new Date(initialData.fechaExpedicion).toISOString().split('T')[0] : prev.fechaExpedicion,
-        fechaVencimiento: initialData.fechaVencimiento ? new Date(initialData.fechaVencimiento).toISOString().split('T')[0] : prev.fechaVencimiento,
+        fechaInicioVigencia: initialData.fechaInicioVigencia ? new Date(initialData.fechaInicioVigencia).toISOString().split('T')[0] : prev.fechaInicioVigencia,
+        fechaTerminacionVigencia: initialData.fechaTerminacionVigencia ? new Date(initialData.fechaTerminacionVigencia).toISOString().split('T')[0] : prev.fechaTerminacionVigencia,
+        numeroAnexos: initialData.numeroAnexos?.toString() || '',
+        tipoAmparo: initialData.tipoAmparo || '',
       }));
 
       if (initialData.aseguradora) {
@@ -102,8 +111,9 @@ const AddCumplimientoModal: React.FC<AddCumplimientoModalProps> = ({ onClose, in
     e.preventDefault();
     setError(null);
 
-    if (!etiqueta || !formData.titularPoliza || !formData.fechaExpedicion || !formData.fechaVencimiento || !aseguradora || !formData.valorPrimaNeta || !formData.valorTotalAsegurado || !formData.numeroPoliza) {
-      setError('Todos los campos obligatorios (excepto RCE si no aplica).');
+    // Basic validation for new fields
+    if (!etiqueta || !formData.titularPoliza || !formData.fechaExpedicion || !formData.fechaInicioVigencia || !formData.fechaTerminacionVigencia || !aseguradora || !formData.valorPrimaNeta || !formData.valorTotalAPagar || !formData.numeroPoliza || !formData.tipoAmparo) {
+      setError('Todos los campos son obligatorios (excepto RCE si no aplica).');
       return;
     }
 
@@ -118,11 +128,15 @@ const AddCumplimientoModal: React.FC<AddCumplimientoModalProps> = ({ onClose, in
       data.append('etiqueta', etiqueta.label);
       data.append('titularPoliza', formData.titularPoliza);
       data.append('fechaExpedicion', formData.fechaExpedicion);
-      data.append('fechaVencimiento', formData.fechaVencimiento);
+      data.append('fechaInicioVigencia', formData.fechaInicioVigencia);
+      data.append('fechaTerminacionVigencia', formData.fechaTerminacionVigencia);
       data.append('aseguradora', aseguradora.label);
       data.append('valorPrimaNeta', formData.valorPrimaNeta);
-      data.append('valorTotalAsegurado', formData.valorTotalAsegurado);
+      data.append('valorTotalAPagar', formData.valorTotalAPagar);
       data.append('numeroPoliza', formData.numeroPoliza);
+      data.append('numeroAnexos', formData.numeroAnexos);
+      data.append('tipoAmparo', formData.tipoAmparo);
+
       if (hasRCE) {
         data.append('hasRCE', 'true');
         data.append('numeroRCE', numeroRCE);
@@ -183,8 +197,12 @@ const AddCumplimientoModal: React.FC<AddCumplimientoModalProps> = ({ onClose, in
               <input type="date" id="fechaExpedicion" value={formData.fechaExpedicion} onChange={handleChange} />
             </div>
             <div className={styles.formGroup}>
-              <label htmlFor="fechaVencimiento">Fecha de Vencimiento</label>
-              <input type="date" id="fechaVencimiento" value={formData.fechaVencimiento} onChange={handleChange} />
+              <label htmlFor="fechaInicioVigencia">Fecha Inicio Vigencia</label>
+              <input type="date" id="fechaInicioVigencia" value={formData.fechaInicioVigencia} onChange={handleChange} />
+            </div>
+             <div className={styles.formGroup}>
+              <label htmlFor="fechaTerminacionVigencia">Fecha Fin Vigencia</label>
+              <input type="date" id="fechaTerminacionVigencia" value={formData.fechaTerminacionVigencia} onChange={handleChange} />
             </div>
           </div>
 
@@ -211,8 +229,19 @@ const AddCumplimientoModal: React.FC<AddCumplimientoModalProps> = ({ onClose, in
               <input type="number" id="valorPrimaNeta" value={formData.valorPrimaNeta} onChange={handleChange} />
             </div>
             <div className={styles.formGroup}>
-              <label htmlFor="valorTotalAsegurado">Valor Total Asegurado</label>
-              <input type="number" id="valorTotalAsegurado" value={formData.valorTotalAsegurado} onChange={handleChange} />
+              <label htmlFor="valorTotalAPagar">Valor Total a Pagar</label>
+              <input type="number" id="valorTotalAPagar" value={formData.valorTotalAPagar} onChange={handleChange} />
+            </div>
+          </div>
+
+          <div className={styles.formRow}>
+            <div className={styles.formGroup}>
+              <label htmlFor="numeroAnexos">Número de Anexos</label>
+              <input type="number" id="numeroAnexos" value={formData.numeroAnexos} onChange={handleChange} />
+            </div>
+            <div className={styles.formGroup}>
+              <label htmlFor="tipoAmparo">Tipo de Amparo</label>
+              <input type="text" id="tipoAmparo" value={formData.tipoAmparo} onChange={handleChange} />
             </div>
           </div>
 
