@@ -5,15 +5,18 @@ import AddCumplimientoModal from './AddCumplimientoModal';
 import PolicyList from './PolicyList';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import Dropzone from '../ui/Dropzone';
 
 // Define the structure of a policy, mirroring the backend
 interface Policy {
   id: string;
   etiqueta: string;
   titularPoliza: string; // Renamed from 'nombre'
-  fecha: string;
+  fechaExpedicion: string;
+  fechaVencimiento: string;
   aseguradora: string;
-  valorPrima: number;
+  valorPrimaNeta: number;
+  valorTotalAsegurado: number;
   numeroPoliza: string;
   files?: string[];
 }
@@ -24,6 +27,10 @@ const CumplimientoModule = () => {
   const [policies, setPolicies] = useState<Policy[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [extractedData, setExtractedData] = useState<Partial<Policy> | null>(null);
+  const [debugText, setDebugText] = useState<string>('');
+
 
   // State for filters
   const [etiquetas, setEtiquetas] = useState<any[]>([]);
@@ -68,7 +75,10 @@ const CumplimientoModule = () => {
     fetchFilterData();
   }, []);
 
-  const handleOpenModal = () => setIsModalOpen(true);
+  const handleOpenModal = () => {
+    setExtractedData(null); // Clear any previous extracted data
+    setIsModalOpen(true);
+  }
   const handleCloseModal = () => {
     setIsModalOpen(false);
     fetchPolicies(); // Refetch policies when modal closes
@@ -87,14 +97,51 @@ const CumplimientoModule = () => {
     }
   };
 
+  const handleFileDrop = async (files: File[]) => {
+    if (files.length === 0) return;
+    const file = files[0];
+    
+    const formData = new FormData();
+    formData.append('file', file);
+
+    setIsExtracting(true);
+    setExtractedData(null);
+    setDebugText('');
+    try {
+      const response = await fetch('/api/cumplimiento/extract-gemini', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorResult = await response.json();
+        throw new Error(errorResult.message || 'Error al extraer los datos del PDF.');
+      }
+
+      const result = await response.json();
+      setExtractedData(result);
+      setDebugText(JSON.stringify(result, null, 2)); // For debugging
+      setIsModalOpen(true); // Open the modal with the pre-filled data
+
+    } catch (err: any) {
+      console.error(err);
+      alert(`Error: ${err.message}`);
+      setDebugText(err.message); // Show error in debug area
+    } finally {
+      setIsExtracting(false);
+    }
+  };
+
   const handleDownload = () => {
     const worksheet = XLSX.utils.json_to_sheet(filteredPolicies.map(p => ({
       'Titular de la Póliza': p.titularPoliza,
       'Etiqueta': p.etiqueta,
       'Aseguradora': p.aseguradora,
       'Número de Póliza': p.numeroPoliza,
-      'Fecha de Emisión': new Date(p.fecha).toLocaleDateString(),
-      'Valor Prima': p.valorPrima,
+      'Fecha de Expedición': new Date(p.fechaExpedicion).toLocaleDateString(),
+      'Fecha de Vencimiento': new Date(p.fechaVencimiento).toLocaleDateString(),
+      'Valor Prima Neta': p.valorPrimaNeta,
+      'Valor Total Asegurado': p.valorTotalAsegurado,
     })));
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Pólizas de Cumplimiento");
@@ -119,6 +166,24 @@ const CumplimientoModule = () => {
           <button onClick={handleOpenModal} className={styles.addButton}>Crear Póliza</button>
         </div>
 
+        <div className={styles.aiSection}>
+          <h2>Inteligencia Artificial</h2>
+          <p>Arrastra un PDF de póliza para llenar los datos automáticamente.</p>
+          {isExtracting ? (
+            <p>Extrayendo datos del PDF...</p>
+          ) : (
+            <Dropzone onFilesAccepted={handleFileDrop} />
+          )}
+        </div>
+
+        {debugText && (
+          <div className={styles.debugSection}>
+            <h3>Texto Extraído del PDF (para depuración):</h3>
+            <pre className={styles.debugText}>{debugText}</pre>
+            <button onClick={() => setDebugText('')} className={styles.clearButton}>Limpiar</button>
+          </div>
+        )}
+
         <div className={styles.filterContainer}>
           <select value={filterEtiqueta} onChange={e => setFilterEtiqueta(e.target.value)}>
             <option value="">Todas las Etiquetas</option>
@@ -139,9 +204,11 @@ const CumplimientoModule = () => {
           onDelete={handleDeletePolicy}
         />
       </div>
-      {isModalOpen && <AddCumplimientoModal onClose={handleCloseModal} />}
+      {isModalOpen && <AddCumplimientoModal onClose={handleCloseModal} initialData={extractedData} />}
     </>
   )
 };
 
-export default CumplimientoModule
+export default CumplimientoModule;
+
+

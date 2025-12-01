@@ -1,24 +1,38 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styles from './AddCumplimientoModal.module.css';
 import CreatableSelect from '@/components/ui/CreatableSelect';
 import Dropzone from '@/components/ui/Dropzone';
 
+// This interface should ideally be shared from a common types file
+interface Policy {
+  id?: string;
+  etiqueta?: string;
+  titularPoliza?: string;
+  fechaExpedicion?: string;
+  fechaVencimiento?: string;
+  aseguradora?: string;
+  valorPrimaNeta?: number;
+  valorTotalAsegurado?: number;
+  numeroPoliza?: string;
+}
 
 interface Option {
   value: string;
   label: string;
 }
 
-
 interface AddCumplimientoModalProps {
   onClose: () => void;
+  initialData?: Partial<Policy> | null;
 }
 
-const AddCumplimientoModal: React.FC<AddCumplimientoModalProps> = ({ onClose }) => {
+const AddCumplimientoModal: React.FC<AddCumplimientoModalProps> = ({ onClose, initialData }) => {
   const [formData, setFormData] = useState({
     titularPoliza: '',
-    fecha: new Date().toISOString().split('T')[0], // Default to today
-    valorPrima: '',
+    fechaExpedicion: new Date().toISOString().split('T')[0],
+    fechaVencimiento: '',
+    valorPrimaNeta: '',
+    valorTotalAsegurado: '',
     numeroPoliza: '',
   });
   const [etiqueta, setEtiqueta] = useState<Option | null>(null);
@@ -30,6 +44,28 @@ const AddCumplimientoModal: React.FC<AddCumplimientoModalProps> = ({ onClose }) 
   const [hasRCE, setHasRCE] = useState(false);
   const [numeroRCE, setNumeroRCE] = useState('');
   const [valorRCE, setValorRCE] = useState('');
+
+  useEffect(() => {
+    if (initialData) {
+      setFormData(prev => ({
+        ...prev,
+        titularPoliza: initialData.titularPoliza || '',
+        numeroPoliza: initialData.numeroPoliza || '',
+        valorPrimaNeta: initialData.valorPrimaNeta?.toString() || '',
+        valorTotalAsegurado: initialData.valorTotalAsegurado?.toString() || '',
+        fechaExpedicion: initialData.fechaExpedicion ? new Date(initialData.fechaExpedicion).toISOString().split('T')[0] : prev.fechaExpedicion,
+        fechaVencimiento: initialData.fechaVencimiento ? new Date(initialData.fechaVencimiento).toISOString().split('T')[0] : prev.fechaVencimiento,
+      }));
+
+      if (initialData.aseguradora) {
+        setAseguradora({ value: initialData.aseguradora, label: initialData.aseguradora });
+      }
+      if (initialData.etiqueta) {
+        setEtiqueta({ value: initialData.etiqueta, label: initialData.etiqueta });
+      }
+    }
+  }, [initialData]);
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -66,7 +102,7 @@ const AddCumplimientoModal: React.FC<AddCumplimientoModalProps> = ({ onClose }) 
     e.preventDefault();
     setError(null);
 
-    if (!etiqueta || !formData.titularPoliza || !formData.fecha || !aseguradora || !formData.valorPrima || !formData.numeroPoliza) {
+    if (!etiqueta || !formData.titularPoliza || !formData.fechaExpedicion || !formData.fechaVencimiento || !aseguradora || !formData.valorPrimaNeta || !formData.valorTotalAsegurado || !formData.numeroPoliza) {
       setError('Todos los campos obligatorios (excepto RCE si no aplica).');
       return;
     }
@@ -81,9 +117,11 @@ const AddCumplimientoModal: React.FC<AddCumplimientoModalProps> = ({ onClose }) 
       const data = new FormData();
       data.append('etiqueta', etiqueta.label);
       data.append('titularPoliza', formData.titularPoliza);
-      data.append('fecha', formData.fecha);
+      data.append('fechaExpedicion', formData.fechaExpedicion);
+      data.append('fechaVencimiento', formData.fechaVencimiento);
       data.append('aseguradora', aseguradora.label);
-      data.append('valorPrima', formData.valorPrima);
+      data.append('valorPrimaNeta', formData.valorPrimaNeta);
+      data.append('valorTotalAsegurado', formData.valorTotalAsegurado);
       data.append('numeroPoliza', formData.numeroPoliza);
       if (hasRCE) {
         data.append('hasRCE', 'true');
@@ -141,9 +179,16 @@ const AddCumplimientoModal: React.FC<AddCumplimientoModalProps> = ({ onClose }) 
 
           <div className={styles.formRow}>
             <div className={styles.formGroup}>
-              <label htmlFor="fecha">Fecha</label>
-              <input type="date" id="fecha" value={formData.fecha} onChange={handleChange} />
+              <label htmlFor="fechaExpedicion">Fecha de Expedición</label>
+              <input type="date" id="fechaExpedicion" value={formData.fechaExpedicion} onChange={handleChange} />
             </div>
+            <div className={styles.formGroup}>
+              <label htmlFor="fechaVencimiento">Fecha de Vencimiento</label>
+              <input type="date" id="fechaVencimiento" value={formData.fechaVencimiento} onChange={handleChange} />
+            </div>
+          </div>
+
+          <div className={styles.formRow}>
             <div className={styles.formGroup}>
               <label htmlFor="aseguradora">Aseguradora</label>
               <CreatableSelect
@@ -154,16 +199,20 @@ const AddCumplimientoModal: React.FC<AddCumplimientoModalProps> = ({ onClose }) 
                 placeholder="Selecciona o escribe para crear..."
               />
             </div>
+            <div className={styles.formGroup}>
+              <label htmlFor="numeroPoliza">Número de Póliza</label>
+              <input type="text" id="numeroPoliza" value={formData.numeroPoliza} onChange={handleChange} />
+            </div>
           </div>
 
           <div className={styles.formRow}>
             <div className={styles.formGroup}>
-              <label htmlFor="valorPrima">Valor Prima</label>
-              <input type="number" id="valorPrima" value={formData.valorPrima} onChange={handleChange} />
+              <label htmlFor="valorPrimaNeta">Valor Prima Neta</label>
+              <input type="number" id="valorPrimaNeta" value={formData.valorPrimaNeta} onChange={handleChange} />
             </div>
             <div className={styles.formGroup}>
-              <label htmlFor="numeroPoliza">Número de Póliza</label>
-              <input type="text" id="numeroPoliza" value={formData.numeroPoliza} onChange={handleChange} />
+              <label htmlFor="valorTotalAsegurado">Valor Total Asegurado</label>
+              <input type="number" id="valorTotalAsegurado" value={formData.valorTotalAsegurado} onChange={handleChange} />
             </div>
           </div>
 
