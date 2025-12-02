@@ -47,10 +47,6 @@ const AddCumplimientoModal: React.FC<AddCumplimientoModalProps> = ({ onClose, in
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [hasRCE, setHasRCE] = useState(false);
-  const [numeroRCE, setNumeroRCE] = useState('');
-  const [valorRCE, setValorRCE] = useState('');
-
   useEffect(() => {
     if (initialData) {
       setFormData(prev => ({
@@ -113,12 +109,7 @@ const AddCumplimientoModal: React.FC<AddCumplimientoModalProps> = ({ onClose, in
 
     // Basic validation for new fields
     if (!etiqueta || !formData.titularPoliza || !formData.fechaExpedicion || !formData.fechaInicioVigencia || !formData.fechaTerminacionVigencia || !aseguradora || !formData.valorPrimaNeta || !formData.valorTotalAPagar || !formData.numeroPoliza || !formData.tipoAmparo) {
-      setError('Todos los campos son obligatorios (excepto RCE si no aplica).');
-      return;
-    }
-
-    if (hasRCE && (!numeroRCE || !valorRCE)) {
-      setError('Por favor, complete los campos de RCE.');
+      setError('Todos los campos son obligatorios.');
       return;
     }
 
@@ -137,11 +128,6 @@ const AddCumplimientoModal: React.FC<AddCumplimientoModalProps> = ({ onClose, in
       data.append('numeroAnexos', formData.numeroAnexos);
       data.append('tipoAmparo', formData.tipoAmparo);
 
-      if (hasRCE) {
-        data.append('hasRCE', 'true');
-        data.append('numeroRCE', numeroRCE);
-        data.append('valorRCE', valorRCE);
-      }
       files.forEach(file => {
         data.append('files', file);
       });
@@ -244,32 +230,6 @@ const AddCumplimientoModal: React.FC<AddCumplimientoModalProps> = ({ onClose, in
               <input type="text" id="tipoAmparo" value={formData.tipoAmparo} onChange={handleChange} />
             </div>
           </div>
-
-          <div className={styles.formGroup}>
-            <label htmlFor="hasRCE" className={styles.checkboxLabel}>
-              <input
-                type="checkbox"
-                id="hasRCE"
-                checked={hasRCE}
-                onChange={(e) => setHasRCE(e.target.checked)}
-                className={styles.checkboxInput}
-              />
-              ¿Tiene RCE?
-            </label>
-          </div>
-
-          {hasRCE && (
-            <div className={styles.formRow}>
-              <div className={styles.formGroup}>
-                <label htmlFor="numeroRCE">Número de RCE</label>
-                <input type="text" id="numeroRCE" value={numeroRCE} onChange={(e) => setNumeroRCE(e.target.value)} />
-              </div>
-              <div className={styles.formGroup}>
-                <label htmlFor="valorRCE">Valor de RCE</label>
-                <input type="number" id="valorRCE" value={valorRCE} onChange={(e) => setValorRCE(e.target.value)} />
-              </div>
-            </div>
-          )}
 
           <div className={styles.formGroup}>
             <label>Adjuntar Archivos</label>

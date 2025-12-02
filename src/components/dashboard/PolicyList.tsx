@@ -4,12 +4,16 @@ import styles from './PolicyList.module.css';
 interface Policy {
   id: string;
   etiqueta: string;
-  titularPoliza: string; // Renamed from 'nombre'
+  titularPoliza: string;
   fechaExpedicion: string;
-  fechaVencimiento: string;
+  fechaInicioVigencia: string; // Matches DB
+  fechaTerminacionVigencia: string; // Matches DB
   aseguradora: string;
-  valorPrima: number;
+  valorPrimaNeta: number; // Matches DB
+  valorTotalAPagar: number; // Matches DB
   numeroPoliza: string;
+  numeroAnexos: number;
+  tipoAmparo: string;
   files?: string[];
 }
 
@@ -38,8 +42,12 @@ const PolicyList: React.FC<PolicyListProps> = ({ policies, isLoading, error, onE
               <th>Aseguradora</th>
               <th>Nº Póliza</th>
               <th>Fecha Expedición</th>
-              <th>Fecha Vencimiento</th>
-              <th>Valor Prima</th>
+              <th>Fecha Inicio Vigencia</th>
+              <th>Fecha Fin Vigencia</th>
+              <th>Valor Prima Neta</th>
+              <th>Valor Total a Pagar</th>
+              <th>Nº Anexos</th>
+              <th>Tipo Amparo</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -51,8 +59,12 @@ const PolicyList: React.FC<PolicyListProps> = ({ policies, isLoading, error, onE
                 <td>{policy.aseguradora}</td>
                 <td>{policy.numeroPoliza}</td>
                 <td>{new Date(policy.fechaExpedicion).toLocaleDateString()}</td>
-                <td>{new Date(policy.fechaVencimiento).toLocaleDateString()}</td>
-                <td>{policy.valorPrima.toLocaleString('es-CO', { style: 'currency', currency: 'COP' })}</td>
+                <td>{new Date(policy.fechaInicioVigencia).toLocaleDateString()}</td>
+                <td>{new Date(policy.fechaTerminacionVigencia).toLocaleDateString()}</td>
+                <td>{policy.valorPrimaNeta.toLocaleString('es-CO', { style: 'currency', currency: 'COP' })}</td>
+                <td>{policy.valorTotalAPagar.toLocaleString('es-CO', { style: 'currency', currency: 'COP' })}</td>
+                <td>{policy.numeroAnexos ?? 'N/A'}</td>
+                <td>{policy.tipoAmparo ?? 'N/A'}</td>
                 <td>
                   <button onClick={() => onEdit(policy.id)} className={styles.actionButton}>Editar</button>
                   <button onClick={() => onDelete(policy.id)} className={`${styles.actionButton} ${styles.deleteButton}`}>Eliminar</button>

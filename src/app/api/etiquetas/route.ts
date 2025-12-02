@@ -1,50 +1,19 @@
 import { NextResponse } from 'next/server';
+import { pool } from '@/lib/db';
+import { customAlphabet } from 'nanoid';
 
-// In-memory placeholder for the database
-let etiquetas = [
-  { id: '1', name: 'CARLOS MENA' },
-  { id: '2', name: 'CLIENTE EJEMPLO' },
-];
+const nanoid = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyz', 12);
 
-/**
- * @swagger
- * /api/etiquetas:
- *   get:
- *     summary: Get all etiquetas
- *     description: Returns a list of all tags/labels.
- *     responses:
- *       200:
- *         description: A list of etiquetas.
- */
 export async function GET() {
   try {
-    // In a real app, you would fetch this from a database
-    return NextResponse.json(etiquetas);
+    const [rows] = await pool.query('SELECT id, name FROM Etiqueta ORDER BY name ASC');
+    return NextResponse.json(rows);
   } catch (error) {
+    console.error("Error fetching etiquetas:", error);
     return NextResponse.json({ message: 'Error interno del servidor' }, { status: 500 });
   }
 }
 
-/**
- * @swagger
- * /api/etiquetas:
- *   post:
- *     summary: Create a new etiqueta
- *     description: Creates a new tag/label.
- *     requestBody:
- *       required: true,
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               name: { type: string }
- *     responses:
- *       201:
- *         description: Etiqueta created successfully.
- *       400:
- *         description: Invalid data provided.
- */
 export async function POST(request: Request) {
   try {
     const { name } = await request.json();
@@ -52,12 +21,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'El nombre es obligatorio' }, { status: 400 });
     }
 
-    // In a real app, you would save this to a database
-    const newEtiqueta = { id: String(etiquetas.length + 1), name };
-    etiquetas.push(newEtiqueta);
+    // Check if it already exists
+    const [existingEtiquetaRows] = await pool.query('SELECT id FROM Etiqueta WHERE name = ?', [name]);
+    if (Array.isArray(existingEtiquetaRows) && existingEtiquetaRows.length > 0) {
+      return NextResponse.json({ message: 'La etiqueta ya existe' }, { status: 409 });
+    }
 
-    return NextResponse.json(newEtiqueta, { status: 201 });
-  } catch (error) {
+    const newId = `cl${nanoid()}`; // Generate CUID
+    await pool.query('INSERT INTO Etiqueta (id, name) VALUES (?, ?)', [newId, name]);
+
+    return NextResponse.json({ id: newId, name }, { status: 201 });
+  } catch (error: any) {
+    console.error("Error creating etiqueta:", error);
+    if (error.code === 'ER_DUP_ENTRY') {
+      return NextResponse.json({ message: 'La etiqueta ya existe' }, { status: 409 });
+    }
     return NextResponse.json({ message: 'Error interno del servidor' }, { status: 500 });
   }
 }
