@@ -68,7 +68,6 @@ const CumplimientoModule = () => {
           fetch('/api/aseguradoras'),
         ]);
         const etiquetasData = await etiquetasRes.json();
-        console.log("Fetched etiquetasData:", etiquetasData); // Debug log
         const aseguradorasData = await aseguradorasRes.json();
         setEtiquetas(etiquetasData);
         setAseguradoras(aseguradorasData);
