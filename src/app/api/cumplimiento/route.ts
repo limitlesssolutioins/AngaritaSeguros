@@ -134,6 +134,7 @@ export async function POST(request: Request) {
 
   } catch (error: any) {
     console.error('Error creating policy:', error);
+    console.error('Error details:', error.message, error.stack, error.code); // More verbose logging
     // Check for duplicate entry error (ER_DUP_ENTRY for MySQL)
     if (error.code === 'ER_DUP_ENTRY') {
       return NextResponse.json({ message: `Error: El número de póliza '${data.get('numeroPoliza')}' ya existe.` }, { status: 409 });
