@@ -36,23 +36,25 @@ export async function POST(req: NextRequest) {
         const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' }); 
 
         const prompt = `
-            Extrae la siguiente información de este documento de póliza de cumplimiento y devuélvela en formato JSON.
+            Extrae la siguiente información de este documento de póliza de seguro y devuélvela en formato JSON.
             El JSON debe tener las siguientes claves:
-            - "numeroPoliza" (string, solo el número, sin letras ni prefijos)
-            - "tomadorPoliza" (string, el nombre del cliente o empresa tomador de la póliza)
-            - "tipoIdentificacion" (string, ej: "CC", "NIT", "CE", "PA")
-            - "numeroIdentificacion" (string, el número de identificación del tomador)
+            - "aseguradora" (string, el nombre de la compañía de seguros)
+            - "ramo" (string, el tipo de seguro, ej: "Automóviles", "Vida", "Salud", "Hogar")
+            - "numeroPoliza" (string)
             - "fechaExpedicion" (string en formato YYYY-MM-DD)
-            - "fechaInicioVigencia" (string en formato YYYY-MM-DD)
-            - "fechaTerminacionVigencia" (string en formato YYYY-MM-DD)
+            - "fechaInicio" (string en formato YYYY-MM-DD, a menudo llamada "desde las...")
+            - "fechaFinVigencia" (string en formato YYYY-MM-DD, a menudo llamada "hasta las...")
+            - "placa" (string, si el ramo es "Automóviles", de lo contrario dejar como string vacío "")
             - "valorPrimaNeta" (número, sin comas ni puntos para miles)
             - "valorTotalAPagar" (número, sin comas ni puntos para miles)
-            - "numeroAnexos" (número, busca un campo específico en el PDF llamado "No. Anexo" o "Número de Anexo")
-            - "tipoPoliza" (string, el tipo de póliza o amparo principal, ej: "Seriedad de oferta" o "Cumplimiento")
-            - "aseguradora" (string, el nombre de la compañía de seguros)
-            - "etiquetaCliente" (string, que debe ser el mismo valor que tomadorPoliza)
+            - "financiado" (booleano, true si la póliza indica que es financiada, de lo contrario false)
+            - "financiera" (string, si es financiado, el nombre de la entidad financiera, de lo contrario string vacío "")
+            - "etiquetaCliente" (string, el nombre del cliente o empresa tomador de la póliza)
+            - "clientTipoIdentificacion" (string, ej: "NIT" o "CC")
+            - "clientNumeroIdentificacion" (string, el número de identificación del tomador)
             
-            Analiza el documento completo para encontrar todos los campos. Presta especial atención a los valores numéricos, las fechas en el formato especificado y a extraer únicamente los números para el 'numeroPoliza'.
+            Analiza el documento completo para encontrar todos los campos. Presta especial atención a los valores numéricos y las fechas.
+            Si un campo no aplica (por ejemplo, 'placa' en una póliza de vida), déjalo como un string vacío o el valor por defecto apropiado.
 
             Asegúrate de que el resultado sea únicamente el objeto JSON válido, sin ningún otro texto o formato como 'json'.
         `;
@@ -68,7 +70,7 @@ export async function POST(req: NextRequest) {
         const response = await result.response;
         let jsonString = response.text();
         
-        console.log("Raw response from Gemini:", jsonString); // Log the raw response
+        console.log("Raw response from Gemini for General Policy:", jsonString); // Log the raw response
 
         // Clean the response to ensure it's a valid JSON string
         jsonString = jsonString.replace(/```json/g, '').replace(/```/g, '').trim();

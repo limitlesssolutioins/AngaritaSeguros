@@ -1,127 +1,109 @@
+'use client';
 import { useEffect, useState, useMemo } from 'react';
 import { useReactTable, getCoreRowModel, flexRender, ColumnDef, getFilteredRowModel } from '@tanstack/react-table';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import styles from './ClientList.module.css';
 import AddClientModal from './AddClientModal';
-import ClientDetailsModal from './ClientDetailsModal';
 
-interface ClientData {
+// This interface should match the database schema
+interface Client {
   id: string;
-  name: string;
-  email: string;
-  phone: string;
-  document: string;
-  address: string;
-  clientType: string;
-  userId: string;
+  nombreCompleto: string;
+  tipoIdentificacion: string;
+  numeroIdentificacion: string;
+  fechaNacimiento: string;
+  direccion: string;
+  telefono: string;
+  correo: string;
 }
-
-interface UserData {
-  id: string;
-  name: string;
-}
-
-const mockClients: ClientData[] = [
-  { id: '1', name: 'Juan Perez', email: 'juan.perez@example.com', phone: '123-456-7890', document: '1001', address: 'Calle 1 # 2-3', clientType: 'natural', userId: 'U002' },
-  { id: '2', name: 'Maria Garcia', email: 'maria.garcia@example.com', phone: '098-765-4321', document: '1002', address: 'Carrera 4 # 5-6', clientType: 'natural', userId: 'U002' },
-  { id: '3', name: 'Pedro Lopez', email: 'pedro.lopez@example.com', phone: '111-222-3333', document: '1003', address: 'Avenida 7 # 8-9', clientType: 'juridico', userId: 'U001' },
-];
 
 export default function ClientList() {
-  const [clients, setClients] = useState<ClientData[]>([]);
-  const [users, setUsers] = useState<UserData[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [globalFilter, setGlobalFilter] = useState<string>('');
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false); // State for details modal
-  const [selectedClient, setSelectedClient] = useState<ClientData | null>(null); // State for selected client
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [clientToEdit, setClientToEdit] = useState<Client | null>(null);
 
-  const usersMap = useMemo(() => {
-    return users.reduce((acc, user) => {
-      acc[user.id] = user.name;
-      return acc;
-    }, {} as Record<string, string>);
-  }, [users]);
+  const fetchClients = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/clients');
+      if (!res.ok) throw new Error('Error al cargar los datos de clientes');
+      const data = await res.json();
+      setClients(data);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // Simulate API call
-    Promise.all([
-      Promise.resolve(mockClients),
-      fetch('/api/users').then(res => res.json()),
-    ]).then(([clientData, userData]) => {
-      setClients(clientData);
-      setUsers(userData);
-      setLoading(false);
-    }).catch(err => {
-      setError('Error al cargar los datos');
-      setLoading(false);
-    });
+    fetchClients();
   }, []);
 
-  const handleAddClient = (newClient: Omit<ClientData, 'id'>) => {
-    // In a real app, you'd send this to an API and get a real ID
-    const newId = (clients.length + 1).toString(); 
-    setClients(prevClients => [...prevClients, { ...newClient, id: newId }]);
+  const handleOpenModal = () => {
+    setClientToEdit(null);
+    setIsModalOpen(true);
   };
 
-  const handleViewDetails = (client: ClientData) => {
-    setSelectedClient(client);
-    setIsDetailsModalOpen(true);
+  const handleCloseModal = () => {
+    setClientToEdit(null);
+    setIsModalOpen(false);
+    fetchClients();
   };
 
-  const columns = useMemo<ColumnDef<ClientData>[]>(
+  const handleEditClient = (client: Client) => {
+    setClientToEdit(client);
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteClient = async (clientId: string) => {
+    if (confirm('¿Está seguro que desea eliminar este cliente? Esta acción no se puede deshacer.')) {
+      try {
+        const response = await fetch(`/api/clients/${clientId}`, {
+          method: 'DELETE',
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Error al eliminar el cliente');
+        }
+        alert('Cliente eliminado exitosamente');
+        fetchClients();
+      } catch (err: any) {
+        console.error(err);
+        alert(`Error: ${err.message}`);
+      }
+    }
+  };
+
+  const columns = useMemo<ColumnDef<Client>[]>(
     () => [
+      { accessorKey: 'nombreCompleto', header: 'Nombre Completo / Razón Social' },
+      { accessorKey: 'tipoIdentificacion', header: 'Tipo ID' },
+      { accessorKey: 'numeroIdentificacion', header: 'Número ID' },
+      { accessorKey: 'telefono', header: 'Teléfono' },
+      { accessorKey: 'correo', header: 'Correo Electrónico' },
+      { accessorKey: 'direccion', header: 'Dirección' },
       {
-        accessorKey: 'id',
-        header: 'ID',
-        cell: info => info.getValue(),
-      },
-      {
-        accessorKey: 'name',
-        header: 'Nombre',
-        cell: info => info.getValue(),
-      },
-      {
-        accessorKey: 'email',
-        header: 'Email',
-        cell: info => info.getValue(),
-      },
-      {
-        accessorKey: 'phone',
-        header: 'Teléfono',
-        cell: info => info.getValue(),
-      },
-      {
-        accessorKey: 'document',
-        header: 'Documento',
-        cell: info => info.getValue(),
-      },
-      {
-        accessorKey: 'address',
-        header: 'Dirección',
-        cell: info => info.getValue(),
-      },
-      {
-        accessorKey: 'clientType',
-        header: 'Tipo Cliente',
-        cell: info => info.getValue(),
-      },
-      {
-        accessorKey: 'userId',
-        header: 'Usuario',
-        cell: ({ row }) => usersMap[row.original.userId] || row.original.userId,
+        accessorKey: 'fechaNacimiento',
+        header: 'Fecha de Nacimiento',
+        cell: info => new Date(info.getValue() as string).toLocaleDateString(),
       },
       {
         id: 'actions',
         header: 'Acciones',
         cell: ({ row }) => (
-          <button onClick={() => handleViewDetails(row.original)} className={styles.actionButton}>Ver Detalles</button>
+          <div className={styles.actionButtons}>
+            <button onClick={() => handleEditClient(row.original)} className={styles.actionButton}>Editar</button>
+            <button onClick={() => handleDeleteClient(row.original.id)} className={`${styles.actionButton} ${styles.deleteButton}`}>Eliminar</button>
+          </div>
         ),
       },
     ],
-    [clients] // Re-memoize if clients change to update actions
+    []
   );
 
   const table = useReactTable({
@@ -137,34 +119,30 @@ export default function ClientList() {
 
   const handleExportToExcel = () => {
     const dataToExport = clients.map(client => ({
-      ID: client.id,
-      Nombre: client.name,
-      Email: client.email,
-      Teléfono: client.phone,
-      Documento: client.document,
-      Dirección: client.address,
-      'Tipo Cliente': client.clientType,
-      Usuario: usersMap[client.userId] || client.userId,
+      'Nombre Completo': client.nombreCompleto,
+      'Tipo ID': client.tipoIdentificacion,
+      'Número ID': client.numeroIdentificacion,
+      'Teléfono': client.telefono,
+      'Correo': client.correo,
+      'Dirección': client.direccion,
+      'Fecha de Nacimiento': client.fechaNacimiento ? new Date(client.fechaNacimiento).toLocaleDateString() : '',
     }));
-
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Clientes');
     const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
     const data = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' });
-    saveAs(data, 'clientes.xlsx');
+    saveAs(data, 'Reporte_Clientes.xlsx');
   };
 
-  if (loading) {
-    return <p className={styles.loadingText}>Cargando clientes...</p>;
-  }
-
-  if (error) {
-    return <p className={styles.errorText}>Error: {error}</p>;
-  }
+  if (loading) return <p>Cargando clientes...</p>;
+  if (error) return <p>Error: {error}</p>;
 
   return (
     <div className={styles.clientListContainer}>
+       <div className={styles.header}>
+          <h1>Gestión de Clientes</h1>
+        </div>
       <div className={styles.controlsContainer}>
         <input
           type="text"
@@ -173,63 +151,34 @@ export default function ClientList() {
           onChange={e => setGlobalFilter(e.target.value)}
           className={styles.filterInput}
         />
-        <button
-          onClick={handleExportToExcel}
-          className={styles.exportButton}
-        >
-          Exportar a Excel
-        </button>
-        <button
-          onClick={() => setIsAddModalOpen(true)}
-          className={styles.addButton}
-        >
-          Agregar Cliente
-        </button>
+        <div className={styles.buttonGroup}>
+          <button onClick={handleExportToExcel} className={styles.exportButton}>Exportar a Excel</button>
+          <button onClick={handleOpenModal} className={styles.addButton}>Agregar Cliente</button>
+        </div>
       </div>
       <div className={styles.tableWrapper}>
         <table className={styles.table}>
           <thead>
             {table.getHeaderGroups().map(headerGroup => (
-              <tr key={headerGroup.id} className={styles.tableHeaderRow}>
+              <tr key={headerGroup.id}>
                 {headerGroup.headers.map(header => (
-                  <th key={header.id} className={styles.tableHeader}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </th>
+                  <th key={header.id}>{flexRender(header.column.columnDef.header,header.getContext())}</th>
                 ))}
               </tr>
             ))}
           </thead>
           <tbody>
             {table.getRowModel().rows.map(row => (
-              <tr key={row.id} className={styles.tableRow}>
+              <tr key={row.id}>
                 {row.getVisibleCells().map(cell => (
-                  <td key={cell.id} className={styles.tableCell}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
+                  <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
                 ))}
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-
-      <AddClientModal 
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onAddClient={handleAddClient}
-      />
-
-      <ClientDetailsModal
-        isOpen={isDetailsModalOpen}
-        onClose={() => setIsDetailsModalOpen(false)}
-        client={selectedClient}
-        usersMap={usersMap}
-      />
+      {isModalOpen && <AddClientModal onClose={handleCloseModal} clientToEdit={clientToEdit} />}
     </div>
   );
 }

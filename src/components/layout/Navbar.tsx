@@ -22,7 +22,7 @@ const Navbar = () => {
             <Link href="/nuestros-seguros" className={`${styles.nav_link} ${pathname === '/nuestros-seguros' ? styles.active_link : ''}`}>Nuestros Seguros</Link>
             <Link href="/blog" className={`${styles.nav_link} ${pathname === '/blog' ? styles.active_link : ''}`}>Blog</Link>
             <Link href="/contacto" className={`${styles.nav_link} ${pathname === '/contacto' ? styles.active_link : ''}`}>Contacto</Link>
-            <Link href="/dashboard" className={`${styles.nav_link} ${pathname === '/dashboard' ? styles.active_link : ''}`}>Dashboard</Link>
+            <Link href="/dashboard/login" className={`${styles.nav_link} ${pathname === '/dashboard' ? styles.active_link : ''}`}>Dashboard</Link>
           </div>
         </div>
       </div>

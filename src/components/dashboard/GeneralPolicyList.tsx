@@ -1,41 +1,43 @@
-import styles from './PolicyList.module.css';
+import styles from './PolicyList.module.css'; // Re-using styles for now
 
-// Define the structure of a policy, mirroring the new backend schema
-interface Policy {
+// Define the structure of a general policy
+interface GeneralPolicy {
   id: string;
   etiquetaOficina: string;
   etiquetaCliente: string;
-  clientNombreCompleto: string; // New: comes from Client table join
-  clientNumeroIdentificacion: string; // New: comes from Client table join
-  tipoIdentificacion: string; // New: comes from Client table join
-  fechaExpedicion: string;
-  fechaInicioVigencia: string;
-  fechaTerminacionVigencia: string;
   aseguradora: string;
+  clientNombreCompleto: string; // New: comes from Client table join
+  clientTipoIdentificacion: string; // New: comes from Client table join
+  clientNumeroIdentificacion: string; // New: comes from Client table join
+  ramo: string;
+  numeroPoliza: string;
+  fechaExpedicion: string;
+  fechaInicio: string;
+  fechaFinVigencia: string;
+  placa?: string;
   valorPrimaNeta: number;
   valorTotalAPagar: number;
-  numeroPoliza: string;
-  numeroAnexos: number;
-  tipoPoliza: string;
+  financiado: boolean;
+  financiera?: string;
   files?: string[];
 }
 
-interface PolicyListProps {
-  policies: Policy[];
+interface GeneralPolicyListProps {
+  policies: GeneralPolicy[];
   isLoading: boolean;
   error: string | null;
   onEdit: (policyId: string) => void;
   onDelete: (policyId: string) => void;
 }
 
-const PolicyList: React.FC<PolicyListProps> = ({ policies, isLoading, error, onEdit, onDelete }) => {
+const GeneralPolicyList: React.FC<GeneralPolicyListProps> = ({ policies, isLoading, error, onEdit, onDelete }) => {
   if (isLoading) return <p>Cargando pólizas...</p>;
   if (error) return <p className={styles.errorText}>{error}</p>;
 
   return (
     <div className={styles.tableContainer}>
       {policies.length === 0 ? (
-        <p>No hay pólizas de cumplimiento creadas todavía.</p>
+        <p>No hay pólizas generales creadas todavía.</p>
       ) : (
         <table className={styles.table}>
           <thead>
@@ -46,12 +48,16 @@ const PolicyList: React.FC<PolicyListProps> = ({ policies, isLoading, error, onE
               <th>Etiqueta Cliente</th>
               <th>Etiqueta Oficina</th>
               <th>Aseguradora</th>
+              <th>Ramo</th>
               <th>Nº Póliza</th>
-              <th>Tipo de Póliza</th>
-              <th>No. Anexo</th>
-              <th>Fecha Inicio Vigencia</th>
-              <th>Fecha Fin Vigencia</th>
-              <th>Valor Prima Neta</th>
+              <th>Fecha Expedición</th>
+              <th>Fecha Inicio</th>
+              <th>Fecha Fin</th>
+              <th>Placa</th>
+              <th>Prima Neta</th>
+              <th>Total a Pagar</th>
+              <th>Financiado</th>
+              <th>Financiera</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -59,17 +65,21 @@ const PolicyList: React.FC<PolicyListProps> = ({ policies, isLoading, error, onE
             {policies.map(policy => (
               <tr key={policy.id}>
                 <td>{policy.clientNombreCompleto}</td>
-                <td>{policy.tipoIdentificacion}</td>
+                <td>{policy.clientTipoIdentificacion}</td>
                 <td>{policy.clientNumeroIdentificacion}</td>
                 <td>{policy.etiquetaCliente}</td>
                 <td>{policy.etiquetaOficina}</td>
                 <td>{policy.aseguradora}</td>
+                <td>{policy.ramo}</td>
                 <td>{policy.numeroPoliza}</td>
-                <td>{policy.tipoPoliza}</td>
-                <td>{policy.numeroAnexos ?? 'N/A'}</td>
-                <td>{new Date(policy.fechaInicioVigencia).toLocaleDateString()}</td>
-                <td>{new Date(policy.fechaTerminacionVigencia).toLocaleDateString()}</td>
+                <td>{new Date(policy.fechaExpedicion).toLocaleDateString()}</td>
+                <td>{new Date(policy.fechaInicio).toLocaleDateString()}</td>
+                <td>{new Date(policy.fechaFinVigencia).toLocaleDateString()}</td>
+                <td>{policy.placa ?? 'N/A'}</td>
                 <td>{policy.valorPrimaNeta.toLocaleString('es-CO', { style: 'currency', currency: 'COP' })}</td>
+                <td>{policy.valorTotalAPagar.toLocaleString('es-CO', { style: 'currency', currency: 'COP' })}</td>
+                <td>{policy.financiado ? 'Sí' : 'No'}</td>
+                <td>{policy.financiera ?? 'N/A'}</td>
                 <td>
                   <button onClick={() => onEdit(policy.id)} className={styles.actionButton}>Editar</button>
                   <button onClick={() => onDelete(policy.id)} className={`${styles.actionButton} ${styles.deleteButton}`}>Eliminar</button>
@@ -83,4 +93,4 @@ const PolicyList: React.FC<PolicyListProps> = ({ policies, isLoading, error, onE
   );
 };
 
-export default PolicyList;
+export default GeneralPolicyList;

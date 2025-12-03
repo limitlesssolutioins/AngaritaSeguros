@@ -2,36 +2,53 @@
   background-color: #ffffff;
   border-radius: 0.5rem;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-  padding: 1rem;
+  padding: 1.5rem; /* Adjusted for better spacing */
 }
 
-.controlsContainer {
+.header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
 }
 
+.header h1 {
+  font-size: 1.75rem; /* Bigger, more prominent title */
+  font-weight: 700;
+  color: #212529; /* Darker text for primary headings */
+  margin: 0;
+}
+
+.controlsContainer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem; /* Adjusted spacing */
+  flex-wrap: wrap; /* Allow wrapping on smaller screens */
+  gap: 1rem; /* Spacing between elements when wrapped */
+}
+
 .filterInput {
-  margin-top: 0.25rem;
   display: block;
-  width: 12rem; /* w-48 */
-  padding-left: 0.75rem; /* pl-3 */
-  padding-right: 0.75rem; /* pr-3 */
-  padding-top: 0.5rem; /* py-2 */
-  padding-bottom: 0.5rem; /* py-2 */
-  font-size: 1rem; /* base */
-  border-width: 1px;
-  border-color: #d1d5db; /* gray-300 */
-  border-radius: 0.375rem; /* rounded-md */
+  flex-grow: 1; /* Allow input to grow */
+  max-width: 18rem; /* w-72 for better scaling */
+  padding: 0.5rem 0.75rem;
+  font-size: 1rem;
+  border: 1px solid #d1d5db; /* gray-300 */
+  border-radius: 0.375rem;
   outline: none;
-  box-shadow: 0 0 0 1px transparent;
-  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* Subtle shadow for input */
+  transition: all 0.2s ease-in-out;
 }
 
 .filterInput:focus {
-  border-color: #9ca3af; /* gray-400 */
-  box-shadow: 0 0 0 1px #9ca3af; /* gray-400 */
+  border-color: #007bff; /* blue */
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25); /* Focus ring */
+}
+
+.buttonGroup {
+  display: flex;
+  gap: 0.5rem; /* Space between buttons */
 }
 
 .exportButton {
@@ -39,15 +56,16 @@
   color: #ffffff;
   padding: 0.5rem 1rem;
   border-radius: 0.375rem;
-  font-size: 0.875rem; /* sm */
+  font-size: 0.875rem;
   font-weight: 500;
   border: none;
   cursor: pointer;
-  transition: background-color 0.15s ease-in-out;
+  transition: background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
 
 .exportButton:hover {
   background-color: #059669; /* green-600 */
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
 .addButton {
@@ -55,26 +73,27 @@
   color: #ffffff;
   padding: 0.5rem 1rem;
   border-radius: 0.375rem;
-  font-size: 0.875rem; /* sm */
+  font-size: 0.875rem;
   font-weight: 500;
   border: none;
   cursor: pointer;
-  transition: background-color 0.15s ease-in-out;
-  margin-left: 0.5rem;
+  transition: background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
 
 .addButton:hover {
   background-color: #0056b3; /* darker blue */
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
 .tableWrapper {
   overflow-x: auto;
   border: 1px solid #e5e7eb; /* gray-200 */
   border-radius: 0.5rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
 .table {
-  min-width: 100%;
+  width: 100%;
   background-color: #ffffff;
   border-collapse: collapse;
 }
@@ -83,7 +102,7 @@
   background-color: #f9fafb; /* gray-50 */
   color: #4b5563; /* gray-600 */
   text-transform: uppercase;
-  font-size: 0.875rem; /* sm */
+  font-size: 0.75rem; /* Smaller for headers */
   line-height: 1.25rem;
 }
 
@@ -91,13 +110,13 @@
   padding: 0.75rem 1.5rem;
   text-align: left;
   font-weight: 600;
+  white-space: nowrap; /* Prevent headers from wrapping too early */
 }
 
 .tableRow {
   border-bottom: 1px solid #f3f4f6; /* gray-100 */
   color: #374151; /* gray-700 */
-  font-size: 0.875rem; /* sm */
-  font-weight: 300;
+  font-size: 0.875rem;
 }
 
 .tableRow:hover {
@@ -110,19 +129,35 @@
   white-space: nowrap;
 }
 
+.actionButtons {
+  display: flex;
+  gap: 0.5rem;
+}
+
 .actionButton {
   background-color: #e5e7eb; /* gray-200 */
   color: #1f2937; /* gray-800 */
   padding: 0.25rem 0.75rem;
   border-radius: 0.375rem;
-  font-size: 0.75rem; /* xs */
+  font-size: 0.75rem;
   border: none;
   cursor: pointer;
-  transition: background-color 0.15s ease-in-out;
+  transition: all 0.2s ease-in-out;
 }
 
 .actionButton:hover {
   background-color: #d1d5db; /* gray-300 */
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.deleteButton {
+  background-color: #dc2626; /* red-600 */
+  color: #ffffff;
+}
+
+.deleteButton:hover {
+  background-color: #b91c1c; /* darker red */
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
 .loadingText,
@@ -133,4 +168,34 @@
 
 .errorText {
   color: #dc2626; /* red-600 */
+  font-weight: 500;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .controlsContainer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .filterInput {
+    max-width: 100%;
+    margin-bottom: 0.5rem;
+  }
+
+  .buttonGroup {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .exportButton,
+  .addButton {
+    flex: 1; /* Make buttons take equal width */
+    text-align: center;
+  }
+
+  .tableHeader,
+  .tableCell {
+    padding: 0.5rem 0.75rem;
+  }
 }

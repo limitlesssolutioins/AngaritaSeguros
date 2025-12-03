@@ -1,0 +1,63 @@
+.container {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 2rem;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+  }
+  
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 1rem;
+  }
+  
+  .header h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #333;
+  }
+  
+  .comingSoon {
+    text-align: center;
+    padding: 3rem 1rem;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+  }
+  
+  .comingSoon h2 {
+    font-size: 2rem;
+    color: #003440;
+    margin-bottom: 1rem;
+  }
+  
+  .comingSoon p {
+    color: #6c757d;
+    font-size: 1.1rem;
+    max-width: 600px;
+    margin: 0 auto 2rem auto;
+  }
+  
+  .featureList {
+    list-style: none;
+    padding: 0;
+    display: inline-block;
+    text-align: left;
+    max-width: 500px;
+  }
+  
+  .featureList li {
+    margin-bottom: 1rem;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+  }
+  
+  .icon {
+    font-size: 1.5rem;
+    margin-right: 1rem;
+    width: 30px;
+  }
+  

@@ -3,112 +3,145 @@
 import { useState, useEffect } from 'react';
 import styles from './AddClientModal.module.css';
 
+interface Client {
+  id: string;
+  nombreCompleto: string;
+  tipoIdentificacion: string;
+  numeroIdentificacion: string;
+  fechaNacimiento: string;
+  direccion: string;
+  telefono: string;
+  correo: string;
+}
+
 interface AddClientModalProps {
-  isOpen: boolean;
   onClose: () => void;
-  onAddClient: (client: Omit<ClientData, 'id'>) => void;
+  clientToEdit?: Client | null;
 }
 
-interface ClientData {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  document: string;
-  address: string;
-  clientType: string;
-  userId: string;
-}
+const AddClientModal: React.FC<AddClientModalProps> = ({ onClose, clientToEdit }) => {
+  const isEditMode = !!clientToEdit;
 
-interface UserData {
-  id: string;
-  name: string;
-}
-
-export default function AddClientModal({ isOpen, onClose, onAddClient }: AddClientModalProps) {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [document, setDocument] = useState('');
-  const [address, setAddress] = useState('');
-  const [clientType, setClientType] = useState('natural');
-  const [userId, setUserId] = useState('');
-  const [users, setUsers] = useState<UserData[]>([]);
+  const [formData, setFormData] = useState({
+    nombreCompleto: '',
+    tipoIdentificacion: '',
+    numeroIdentificacion: '',
+    fechaNacimiento: '',
+    direccion: '',
+    telefono: '',
+    correo: '',
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isOpen) {
-      fetch('/api/users')
-        .then(res => res.json())
-        .then(data => setUsers(data));
+    if (isEditMode && clientToEdit) {
+      setFormData({
+        nombreCompleto: clientToEdit.nombreCompleto || '',
+        tipoIdentificacion: clientToEdit.tipoIdentificacion || '',
+        numeroIdentificacion: clientToEdit.numeroIdentificacion || '',
+        fechaNacimiento: clientToEdit.fechaNacimiento ? new Date(clientToEdit.fechaNacimiento).toISOString().split('T')[0] : '',
+        direccion: clientToEdit.direccion || '',
+        telefono: clientToEdit.telefono || '',
+        correo: clientToEdit.correo || '',
+      });
     }
-  }, [isOpen]);
+  }, [clientToEdit, isEditMode]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name || !email || !phone || !document || !address || !userId) {
-      alert('Por favor, complete todos los campos.');
-      return;
-    }
-    onAddClient({ name, email, phone, document, address, clientType, userId });
-    setName('');
-    setEmail('');
-    setPhone('');
-    setDocument('');
-    setAddress('');
-    setClientType('natural');
-    setUserId('');
-    onClose();
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { id, value } = e.target;
+    setFormData(prev => ({ ...prev, [id]: value }));
   };
 
-  if (!isOpen) return null;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    if (!formData.nombreCompleto || !formData.numeroIdentificacion) {
+      setError('Nombre Completo y Número de Identificación son obligatorios.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const url = isEditMode ? `/api/clients/${clientToEdit?.id}` : '/api/clients';
+      const method = isEditMode ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Error al ${isEditMode ? 'actualizar' : 'crear'} el cliente`);
+      }
+
+      alert(`Cliente ${isEditMode ? 'actualizado' : 'creado'} exitosamente`);
+      onClose();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className={styles.modalOverlay}>
       <div className={styles.modalContent}>
-        <h2 className={styles.modalTitle}>Agregar Nuevo Cliente</h2>
+        <h2 className={styles.modalTitle}>{isEditMode ? 'Editar Cliente' : 'Agregar Nuevo Cliente'}</h2>
         <form onSubmit={handleSubmit} className={styles.formGrid}>
           <div className={styles.formGroup}>
-            <label htmlFor="name" className={styles.formLabel}>Nombre:</label>
-            <input type="text" id="name" className={styles.formInput} value={name} onChange={(e) => setName(e.target.value)} />
+            <label htmlFor="nombreCompleto">Nombre Completo / Razón Social</label>
+            <input type="text" id="nombreCompleto" value={formData.nombreCompleto} onChange={handleChange} />
           </div>
           <div className={styles.formGroup}>
-            <label htmlFor="email" className={styles.formLabel}>Email:</label>
-            <input type="email" id="email" className={styles.formInput} value={email} onChange={(e) => setEmail(e.target.value)} />
+            <label htmlFor="numeroIdentificacion">Número de Identificación</label>
+            <input type="text" id="numeroIdentificacion" value={formData.numeroIdentificacion} onChange={handleChange} />
           </div>
           <div className={styles.formGroup}>
-            <label htmlFor="phone" className={styles.formLabel}>Teléfono:</label>
-            <input type="text" id="phone" className={styles.formInput} value={phone} onChange={(e) => setPhone(e.target.value)} />
-          </div>
-          <div className={styles.formGroup}>
-            <label htmlFor="document" className={styles.formLabel}>Documento:</label>
-            <input type="text" id="document" className={styles.formInput} value={document} onChange={(e) => setDocument(e.target.value)} />
-          </div>
-          <div className={styles.formGroup}>
-            <label htmlFor="address" className={styles.formLabel}>Dirección:</label>
-            <input type="text" id="address" className={styles.formInput} value={address} onChange={(e) => setAddress(e.target.value)} />
-          </div>
-          <div className={styles.formGroup}>
-            <label htmlFor="clientType" className={styles.formLabel}>Tipo de Cliente:</label>
-            <select id="clientType" className={styles.formInput} value={clientType} onChange={(e) => setClientType(e.target.value)}>
-              <option value="natural">Natural</option>
-              <option value="juridico">Jurídico</option>
+            <label htmlFor="tipoIdentificacion">Tipo de Identificación</label>
+            <select id="tipoIdentificacion" value={formData.tipoIdentificacion} onChange={handleChange}>
+              <option value="">Selecciona...</option>
+              <option value="CC">Cédula de Ciudadanía</option>
+              <option value="NIT">NIT</option>
+              <option value="CE">Cédula de Extranjería</option>
+              <option value="PA">Pasaporte</option>
             </select>
           </div>
           <div className={styles.formGroup}>
-            <label htmlFor="user" className={styles.formLabel}>Usuario:</label>
-            <select id="user" className={styles.formInput} value={userId} onChange={(e) => setUserId(e.target.value)}>
-              <option value="">Seleccione un usuario</option>
-              {users.map(user => (
-                <option key={user.id} value={user.id}>{user.name}</option>
-              ))}
-            </select>
+            <label htmlFor="telefono">Teléfono</label>
+            <input type="text" id="telefono" value={formData.telefono} onChange={handleChange} />
           </div>
+          <div className={styles.formGroup}>
+            <label htmlFor="correo">Correo Electrónico</label>
+            <input type="email" id="correo" value={formData.correo} onChange={handleChange} />
+          </div>
+          <div className={styles.formGroup}>
+            <label htmlFor="direccion">Dirección</label>
+            <input type="text" id="direccion" value={formData.direccion} onChange={handleChange} />
+          </div>
+          <div className={styles.formGroup}>
+            <label htmlFor="fechaNacimiento">Fecha de Nacimiento</label>
+            <input type="date" id="fechaNacimiento" value={formData.fechaNacimiento} onChange={handleChange} />
+          </div>
+          
+          {error && <p className={styles.errorText}>{error}</p>}
+
           <div className={styles.modalActions}>
-            <button type="submit" className={styles.submitButton}>Agregar Cliente</button>
-            <button type="button" onClick={onClose} className={styles.cancelButton}>Cancelar</button>
+            <button type="submit" className={styles.submitButton} disabled={isSubmitting}>
+              {isSubmitting ? 'Guardando...' : (isEditMode ? 'Actualizar Cliente' : 'Agregar Cliente')}
+            </button>
+            <button type="button" onClick={onClose} className={styles.cancelButton} disabled={isSubmitting}>
+              Cancelar
+            </button>
           </div>
         </form>
       </div>
     </div>
   );
-}
+};
+
+export default AddClientModal;
+

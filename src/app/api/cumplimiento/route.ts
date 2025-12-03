@@ -10,36 +10,39 @@ export async function GET() {
   try {
     const [rows] = await pool.query(`
       SELECT 
-        p.id, p.numeroPoliza, p.titularPoliza, p.fechaExpedicion, p.fechaInicioVigencia, 
+        p.id, p.numeroPoliza, 
+        c.nombreCompleto AS clientNombreCompleto, c.numeroIdentificacion, c.tipoIdentificacion,
+        p.fechaExpedicion, p.fechaInicioVigencia, 
         p.fechaTerminacionVigencia, p.valorPrimaNeta, p.valorTotalAPagar, p.numeroAnexos, 
-        p.tipoAmparo, p.files, p.createdAt, p.updatedAt,
+        p.tipoPoliza, p.files, p.createdAt, p.updatedAt,
         a.name AS aseguradora,
-        e.name AS etiqueta
+        eo.name AS etiquetaOficina,
+        ec.name AS etiquetaCliente
       FROM Policy p
-      JOIN Aseguradora a ON p.aseguradoraId = a.id
-      JOIN Etiqueta e ON p.etiquetaId = e.id
+      LEFT JOIN Aseguradora a ON p.aseguradoraId = a.id
+      LEFT JOIN Etiqueta eo ON p.etiquetaOficinaId = eo.id
+      LEFT JOIN Etiqueta ec ON p.etiquetaClienteId = ec.id
+      LEFT JOIN Client c ON p.clientId = c.id
       ORDER BY p.createdAt DESC
     `);
     
-    // The query already returns formatted data with aseguradora.name and etiqueta.name
-    // Cast to an array of objects for type compatibility
     const policies = rows as any[]; 
     
-    // Format dates to ISO strings if needed by the frontend, mysql2 returns Date objects
     const formattedPolicies = policies.map(p => ({
       ...p,
-      fechaExpedicion: p.fechaExpedicion.toISOString(),
-      fechaInicioVigencia: p.fechaInicioVigencia.toISOString(),
-      fechaTerminacionVigencia: p.fechaTerminacionVigencia.toISOString(),
-      createdAt: p.createdAt.toISOString(),
-      updatedAt: p.updatedAt.toISOString(),
-      files: JSON.parse(p.files || '[]') // Parse JSON string from DB
+      // Ensure these properties exist before calling toISOString
+      fechaExpedicion: p.fechaExpedicion ? new Date(p.fechaExpedicion).toISOString() : null,
+      fechaInicioVigencia: p.fechaInicioVigencia ? new Date(p.fechaInicioVigencia).toISOString() : null,
+      fechaTerminacionVigencia: p.fechaTerminacionVigencia ? new Date(p.fechaTerminacionVigencia).toISOString() : null,
+      createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : null,
+      updatedAt: p.updatedAt ? new Date(p.updatedAt).toISOString() : null,
+      files: JSON.parse(p.files || '[]')
     }));
 
     return NextResponse.json(formattedPolicies);
   } catch (error) {
-    console.error('Error fetching policies:', error);
-    return NextResponse.json({ message: 'Error interno del servidor al obtener pólizas' }, { status: 500 });
+    console.error('Error fetching cumplimiento policies:', error);
+    return NextResponse.json({ message: 'Error interno del servidor al obtener pólizas de cumplimiento' }, { status: 500 });
   }
 }
 
@@ -47,9 +50,12 @@ export async function POST(request: Request) {
   try {
     const data = await request.formData();
     
-    // Read all fields from FormData
-    const etiquetaName = data.get('etiqueta') as string;
-    const titularPoliza = data.get('titularPoliza') as string;
+    const etiquetaOficinaName = data.get('etiquetaOficina') as string;
+    const etiquetaClienteName = data.get('etiquetaCliente') as string;
+    const clientNombreCompleto = data.get('tomadorPoliza') as string; // Will be client's name
+    const clientNumeroIdentificacion = data.get('numeroIdentificacion') as string; // New field for client identification
+    const tipoIdentificacion = data.get('tipoIdentificacion') as string; // Added: Retrieve tipoIdentificacion
+    const tipoPoliza = data.get('tipoPoliza') as string;
     const fechaExpedicion = data.get('fechaExpedicion') as string;
     const fechaInicioVigencia = data.get('fechaInicioVigencia') as string;
     const fechaTerminacionVigencia = data.get('fechaTerminacionVigencia') as string;
@@ -58,15 +64,12 @@ export async function POST(request: Request) {
     const valorTotalAPagar = data.get('valorTotalAPagar') as string;
     const numeroPoliza = data.get('numeroPoliza') as string;
     const numeroAnexos = data.get('numeroAnexos') as string;
-    const tipoAmparo = data.get('tipoAmparo') as string;
     const files = data.getAll('files') as File[];
 
-    // --- Validation ---
-    if (!etiquetaName || !titularPoliza || !fechaExpedicion || !aseguradoraName || !valorPrimaNeta || !numeroPoliza) {
+    if (!etiquetaClienteName || !clientNombreCompleto || !clientNumeroIdentificacion || !tipoIdentificacion || !fechaExpedicion || !aseguradoraName || !valorPrimaNeta || !numeroPoliza) {
         return NextResponse.json({ message: 'Faltan campos obligatorios' }, { status: 400 });
     }
 
-    // --- File Upload Logic (remains the same) ---
     const uploadedFilePaths: string[] = [];
     if (files && files.length > 0) {
       const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'cumplimiento');
@@ -81,61 +84,73 @@ export async function POST(request: Request) {
       }
     }
 
-    // --- Database Logic ---
     let aseguradoraId: string;
-    let etiquetaId: string;
+    let etiquetaOficinaId: string | null = null;
+    let etiquetaClienteId: string;
+    let clientId: string; // New variable for client ID
 
-    // 1. Find or Create Aseguradora
-    const [existingAseguradoraRows] = await pool.query('SELECT id FROM Aseguradora WHERE name = ?', [aseguradoraName]);
-    if (Array.isArray(existingAseguradoraRows) && existingAseguradoraRows.length > 0) {
-      aseguradoraId = existingAseguradoraRows[0].id;
-    } else {
-      aseguradoraId = `cl${nanoid()}`; // Generate CUID
-      await pool.query('INSERT INTO Aseguradora (id, name) VALUES (?, ?)', [aseguradoraId, aseguradoraName]);
+    // Find or Create Aseguradora
+    const [aseguradoraRows]: [any[], any] = await pool.query('SELECT id FROM Aseguradora WHERE name = ?', [aseguradoraName]);
+    if (aseguradoraRows.length > 0) { aseguradoraId = aseguradoraRows[0].id; } else { aseguradoraId = `cl${nanoid()}`; await pool.query('INSERT INTO Aseguradora (id, name) VALUES (?, ?)', [aseguradoraId, aseguradoraName]); }
+
+    // Find or Create Etiqueta Oficina
+    if (etiquetaOficinaName) {
+        const [oficinaRows]: [any[], any] = await pool.query('SELECT id FROM Etiqueta WHERE name = ?', [etiquetaOficinaName]);
+        if (oficinaRows.length > 0) { etiquetaOficinaId = oficinaRows[0].id; } else { etiquetaOficinaId = `cl${nanoid()}`; await pool.query('INSERT INTO Etiqueta (id, name) VALUES (?, ?)', [etiquetaOficinaId, etiquetaOficinaName]); }
     }
 
-    // 2. Find or Create Etiqueta
-    const [existingEtiquetaRows] = await pool.query('SELECT id FROM Etiqueta WHERE name = ?', [etiquetaName]);
-    if (Array.isArray(existingEtiquetaRows) && existingEtiquetaRows.length > 0) {
-      etiquetaId = existingEtiquetaRows[0].id;
+    // Find or Create Etiqueta Cliente
+    const [clienteEtiquetaRows]: [any[], any] = await pool.query('SELECT id FROM Etiqueta WHERE name = ?', [etiquetaClienteName]);
+    if (clienteEtiquetaRows.length > 0) { etiquetaClienteId = clienteEtiquetaRows[0].id; } else { etiquetaClienteId = `cl${nanoid()}`; await pool.query('INSERT INTO Etiqueta (id, name) VALUES (?, ?)', [etiquetaClienteId, etiquetaClienteName]); }
+
+    // Find or Create Client (NEW LOGIC)
+    const [existingClientRows]: [any[], any] = await pool.query('SELECT id FROM Client WHERE numeroIdentificacion = ?', [clientNumeroIdentificacion]);
+    if (existingClientRows.length > 0) {
+      clientId = existingClientRows[0].id;
+      // If client exists, update their name and type of identification if they changed
+      await pool.query(
+        `UPDATE Client SET nombreCompleto = ?, tipoIdentificacion = ?, updatedAt = NOW() WHERE id = ?`,
+        [clientNombreCompleto, tipoIdentificacion, clientId]
+      );
     } else {
-      etiquetaId = `cl${nanoid()}`; // Generate CUID
-      await pool.query('INSERT INTO Etiqueta (id, name) VALUES (?, ?)', [etiquetaId, etiquetaName]);
+      clientId = `cl${nanoid()}`;
+      await pool.query(
+        `INSERT INTO Client (id, nombreCompleto, numeroIdentificacion, tipoIdentificacion, createdAt, updatedAt) 
+         VALUES (?, ?, ?, ?, NOW(), NOW())`,
+        [clientId, clientNombreCompleto, clientNumeroIdentificacion, tipoIdentificacion]
+      );
     }
 
-    // 3. Create the Policy
-    const policyId = `cl${nanoid()}`; // Generate CUID
-    const [result] = await pool.query(
+
+    const policyId = `cl${nanoid()}`;
+    await pool.query(
       `INSERT INTO Policy (
-        id, numeroPoliza, titularPoliza, fechaExpedicion, fechaInicioVigencia, 
+        id, numeroPoliza, fechaExpedicion, fechaInicioVigencia, 
         fechaTerminacionVigencia, valorPrimaNeta, valorTotalAPagar, numeroAnexos, 
-        tipoAmparo, aseguradoraId, etiquetaId, files, createdAt, updatedAt
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+        tipoPoliza, aseguradoraId, etiquetaOficinaId, etiquetaClienteId, clientId, files, createdAt, updatedAt
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
       [
         policyId,
         numeroPoliza,
-        titularPoliza,
         new Date(fechaExpedicion),
         new Date(fechaInicioVigencia),
         new Date(fechaTerminacionVigencia),
         parseFloat(valorPrimaNeta),
         parseFloat(valorTotalAPagar),
         numeroAnexos ? parseInt(numeroAnexos, 10) : null,
-        tipoAmparo || null,
+        tipoPoliza || null,
         aseguradoraId,
-        etiquetaId,
-        JSON.stringify(uploadedFilePaths), // Storing as JSON string
+        etiquetaOficinaId,
+        etiquetaClienteId,
+        clientId, // Use the client ID here
+        JSON.stringify(uploadedFilePaths),
       ]
     );
 
-    // Assuming the insert was successful, return a success response
-    // For simplicity, we are not re-querying the created policy, just returning the input data
-    return NextResponse.json({ message: 'Póliza creada exitosamente', policy: { id: policyId, numeroPoliza, titularPoliza } }, { status: 201 });
+    return NextResponse.json({ message: 'Póliza de cumplimiento creada exitosamente', policy: { id: policyId, numeroPoliza, clientNombreCompleto } }, { status: 201 });
 
   } catch (error: any) {
-    console.error('Error creating policy:', error);
-    console.error('Error details:', error.message, error.stack, error.code); // More verbose logging
-    // Check for duplicate entry error (ER_DUP_ENTRY for MySQL)
+    console.error('Error creating cumplimiento policy:', error);
     if (error.code === 'ER_DUP_ENTRY') {
       return NextResponse.json({ message: `Error: El número de póliza '${data.get('numeroPoliza')}' ya existe.` }, { status: 409 });
     }

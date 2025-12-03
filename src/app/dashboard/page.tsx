@@ -11,6 +11,8 @@ import CarteraList from '@/components/dashboard/CarteraList';
 import GestionEmpresarialModule from '@/components/dashboard/GestionEmpresarialModule';
 import SettingsModule from '@/components/dashboard/SettingsModule';
 import CumplimientoModule from '@/components/dashboard/CumplimientoModule';
+import PolicyModule from '@/components/dashboard/PolicyModule'; // Import the new PolicyModule
+import ComunicacionModule from '@/components/dashboard/ComunicacionModule'; // Import the new ComunicacionModule
 import styles from './DashboardPage.module.css'; // Import CSS Module
 
 export default function DashboardPage() {
@@ -19,7 +21,7 @@ export default function DashboardPage() {
   const getSectionTitle = () => {
     switch (activeSection) {
       case 'requests':
-        return 'Gestión de Solicitudes';
+        return 'Módulo Web';
       case 'clients':
         return 'Gestión de Clientes';
       case 'tasks':
@@ -36,6 +38,10 @@ export default function DashboardPage() {
         return 'Gestión de Usuarios';
       case 'cumplimiento':
         return 'Pólizas de Cumplimiento';
+      case 'general-policies': // New case for general policies
+        return 'Pólizas Generales';
+      case 'comunicacion': // New case for communication
+        return 'Módulo de Comunicación';
       default:
         return 'Dashboard';
     }
@@ -95,6 +101,16 @@ export default function DashboardPage() {
         {activeSection === 'cumplimiento' && (
           <div>
             <CumplimientoModule />
+          </div>
+        )}
+        {activeSection === 'general-policies' && ( // Conditional rendering for the new module
+          <div>
+            <PolicyModule />
+          </div>
+        )}
+        {activeSection === 'comunicacion' && ( // Conditional rendering for the new module
+          <div>
+            <ComunicacionModule />
           </div>
         )}
       </main>
