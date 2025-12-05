@@ -4,11 +4,11 @@ import { useState } from 'react';
 import RequestsList from '@/components/dashboard/RequestsList';
 import UsersList from '@/components/dashboard/UsersList';
 import ClientList from '@/components/dashboard/ClientList';
-import TaskList from '@/components/dashboard/TaskList';
+import PolicyRenewalTasks from '@/components/dashboard/PolicyRenewalTasks';
 import ReportsModule from '@/components/dashboard/ReportsModule';
 import DashboardNavbar from '@/components/dashboard/DashboardNavbar';
-import CarteraList from '@/components/dashboard/CarteraList';
-import GestionEmpresarialModule from '@/components/dashboard/GestionEmpresarialModule';
+import CarteraModule from '@/components/dashboard/CarteraModule'; // Changed from CarteraList
+import GestionEmpresarialContainer from '@/components/dashboard/GestionEmpresarialContainer'; // New Import
 import SettingsModule from '@/components/dashboard/SettingsModule';
 import CumplimientoModule from '@/components/dashboard/CumplimientoModule';
 import PolicyModule from '@/components/dashboard/PolicyModule';
@@ -25,13 +25,13 @@ export default function DashboardPage() {
       case 'clients':
         return 'Gestión de Clientes';
       case 'tasks':
-        return 'Gestión de Tareas';
+        return 'Gestión de Tareas de Renovación de Pólizas';
       case 'cartera':
-        return 'Gestión de Cartera';
+        return 'Gestión de Cartera'; // Title remains the same
       case 'reports':
         return 'Informes';
       case 'gestion-empresarial':
-        return 'Gestión Empresarial';
+        return 'Gestión Empresarial'; // Title remains the same
       case 'settings':
         return 'Configuración';
       case 'cumplimiento':
@@ -65,12 +65,12 @@ export default function DashboardPage() {
       )}
       {activeSection === 'tasks' && (
         <div>
-          <TaskList />
+          <PolicyRenewalTasks />
         </div>
       )}
       {activeSection === 'cartera' && (
         <div>
-          <CarteraList />
+          <CarteraModule /> {/* Changed from CarteraList */}
         </div>
       )}
       {activeSection === 'reports' && (
@@ -80,7 +80,7 @@ export default function DashboardPage() {
       )}
       {activeSection === 'gestion-empresarial' && (
         <div>
-          <GestionEmpresarialModule />
+          <GestionEmpresarialContainer />
         </div>
       )}
       {activeSection === 'settings' && (
