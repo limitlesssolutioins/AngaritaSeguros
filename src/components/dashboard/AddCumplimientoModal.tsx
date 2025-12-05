@@ -1,16 +1,18 @@
-import { useState, useEffect } from 'react';
+'use client';
+import { useState, useEffect, useCallback } from 'react';
 import styles from './AddCumplimientoModal.module.css';
 import CreatableSelect from '@/components/ui/CreatableSelect';
 import Dropzone from '@/components/ui/Dropzone';
+import { FaSearch, FaUser } from 'react-icons/fa'; // Import icons
 
 // This interface should ideally be shared from a common types file
 interface Policy {
   id?: string;
   etiquetaOficina?: string;
   etiquetaCliente?: string;
-  clientNombreCompleto?: string; // New: comes from Client table join
-  clientNumeroIdentificacion?: string; // New: comes from Client table join
-  tipoIdentificacion?: string; // New: comes from Client table join
+  clientNombreCompleto?: string;
+  clientNumeroIdentificacion?: string;
+  tipoIdentificacion?: string;
   fechaExpedicion?: string;
   fechaInicioVigencia?: string;
   fechaTerminacionVigencia?: string;
@@ -25,6 +27,14 @@ interface Policy {
 interface Option {
   value: string;
   label: string;
+}
+
+// Client interface from client list, but simplified for this use
+interface Client {
+  id: string;
+  nombreCompleto: string;
+  tipoIdentificacion: string;
+  numeroIdentificacion: string;
 }
 
 interface AddCumplimientoModalProps {
@@ -56,6 +66,11 @@ const AddCumplimientoModal: React.FC<AddCumplimientoModalProps> = ({ onClose, in
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // State for client lookup
+  const [clientSearchLoading, setClientSearchLoading] = useState(false);
+  const [clientSearchError, setClientSearchError] = useState<string | null>(null);
+  const [foundClientData, setFoundClientData] = useState<Client | null>(null);
+
   useEffect(() => {
     const data = policyToEdit || initialData;
     if (data) {
@@ -83,6 +98,16 @@ const AddCumplimientoModal: React.FC<AddCumplimientoModalProps> = ({ onClose, in
       if (data.etiquetaCliente) {
         setEtiquetaCliente({ value: data.etiquetaCliente, label: data.etiquetaCliente });
       }
+
+      // If initial data has client ID, we should try to fetch the full client data
+      if (data.clientNumeroIdentificacion) {
+        handleNumeroIdentificacionChange({
+            target: {
+                id: 'clientNumeroIdentificacion',
+                value: data.clientNumeroIdentificacion
+            }
+        } as React.ChangeEvent<HTMLInputElement>);
+      }
     }
   }, [initialData, policyToEdit]);
 
@@ -90,6 +115,58 @@ const AddCumplimientoModal: React.FC<AddCumplimientoModalProps> = ({ onClose, in
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { id, value } = e.target;
     setFormData((prev) => ({ ...prev, [id]: value }));
+  };
+
+  const debounce = (func: (...args: any[]) => void, delay: number) => {
+    let timeout: NodeJS.Timeout;
+    return (...args: any[]) => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func(...args), delay);
+    };
+  };
+
+  const searchClient = useCallback(debounce(async (numeroIdentificacion: string) => {
+    if (!numeroIdentificacion) {
+      setFoundClientData(null);
+      setFormData(prev => ({ ...prev, clientNombreCompleto: '', tipoIdentificacion: '' }));
+      setClientSearchError(null);
+      return;
+    }
+
+    setClientSearchLoading(true);
+    setClientSearchError(null);
+    try {
+      const res = await fetch(`/api/clients?numeroIdentificacion=${numeroIdentificacion}`);
+      if (!res.ok) {
+        throw new Error('Error al buscar cliente');
+      }
+      const data: Client[] = await res.json();
+      if (data.length > 0) {
+        setFoundClientData(data[0]);
+        setFormData(prev => ({ 
+            ...prev, 
+            clientNombreCompleto: data[0].nombreCompleto, 
+            tipoIdentificacion: data[0].tipoIdentificacion 
+        }));
+      } else {
+        setFoundClientData(null);
+        // If client is not found, retain the nombreCompleto and tipoIdentificacion from initialData/formData
+        // Do not clear them, as they might come from Gemini extraction.
+        // setFormData(prev => ({ ...prev, clientNombreCompleto: '', tipoIdentificacion: '' })); // REMOVED THIS CLEARING LOGIC
+      }
+    } catch (err: any) {
+      setClientSearchError(err.message);
+      setFoundClientData(null);
+    } finally {
+      setClientSearchLoading(false);
+    }
+  }, 500), [formData.clientNombreCompleto, initialData, policyToEdit]);
+
+
+  const handleNumeroIdentificacionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target;
+    setFormData(prev => ({ ...prev, clientNumeroIdentificacion: value }));
+    searchClient(value);
   };
 
   const handleCreateOption = async (apiUrl: string, inputValue: string): Promise<Option> => {
@@ -135,6 +212,12 @@ const AddCumplimientoModal: React.FC<AddCumplimientoModalProps> = ({ onClose, in
       data.append('tomadorPoliza', formData.clientNombreCompleto); // Send client's full name
       data.append('numeroIdentificacion', formData.clientNumeroIdentificacion); // Send identification number
       data.append('tipoIdentificacion', formData.tipoIdentificacion); // Send identification type
+
+      // If a client was found, include its ID
+      if (foundClientData?.id) {
+        data.append('clientId', foundClientData.id);
+      }
+      
       data.append('fechaExpedicion', formData.fechaExpedicion);
       data.append('fechaInicioVigencia', formData.fechaInicioVigencia);
       data.append('fechaTerminacionVigencia', formData.fechaTerminacionVigencia);
@@ -207,24 +290,45 @@ const AddCumplimientoModal: React.FC<AddCumplimientoModalProps> = ({ onClose, in
           
           <div className={styles.formRow}>
             <div className={styles.formGroup}>
-                <label htmlFor="clientNombreCompleto">Nombre Completo del Tomador</label>
-                <input type="text" id="clientNombreCompleto" value={formData.clientNombreCompleto} onChange={handleChange} />
+              <label htmlFor="clientNumeroIdentificacion">Número de Identificación del Tomador</label>
+              <div className={styles.inputWithIcon}>
+                <FaSearch className={styles.inputIcon} />
+                <input type="text" id="clientNumeroIdentificacion" value={formData.clientNumeroIdentificacion} onChange={handleNumeroIdentificacionChange} />
+              </div>
+              {clientSearchLoading && <p className={styles.searchStatus}>Buscando cliente...</p>}
+              {clientSearchError && <p className={styles.searchError}>{clientSearchError}</p>}
             </div>
             <div className={styles.formGroup}>
+                <label htmlFor="clientNombreCompleto">Nombre Completo del Tomador</label>
+                <div className={styles.inputWithIcon}>
+                  <FaUser className={styles.inputIcon} />
+                  <input
+                    type="text"
+                    id="clientNombreCompleto"
+                    value={foundClientData?.nombreCompleto || formData.clientNombreCompleto}
+                    onChange={handleChange}
+                    readOnly={!!foundClientData}
+                    className={foundClientData ? styles.readOnlyInput : ''}
+                  />
+                </div>
+            </div>
+          </div>
+          <div className={styles.formRow}>
+            <div className={styles.formGroup}>
               <label htmlFor="tipoIdentificacion">Tipo de Identificación del Tomador</label>
-              <select id="tipoIdentificacion" value={formData.tipoIdentificacion} onChange={handleChange}>
+              <select 
+                id="tipoIdentificacion" 
+                value={foundClientData?.tipoIdentificacion || formData.tipoIdentificacion} 
+                onChange={handleChange} 
+                disabled={!!foundClientData}
+                className={foundClientData ? styles.readOnlyInput : ''}
+              >
                 <option value="">Selecciona...</option>
                 <option value="CC">Cédula de Ciudadanía</option>
                 <option value="NIT">NIT</option>
                 <option value="CE">Cédula de Extranjería</option>
                 <option value="PA">Pasaporte</option>
               </select>
-            </div>
-          </div>
-          <div className={styles.formRow}>
-            <div className={styles.formGroup}>
-                <label htmlFor="clientNumeroIdentificacion">Número de Identificación del Tomador</label>
-                <input type="text" id="clientNumeroIdentificacion" value={formData.clientNumeroIdentificacion} onChange={handleChange} />
             </div>
             <div className={styles.formGroup}>
               <label htmlFor="aseguradora">Aseguradora</label>

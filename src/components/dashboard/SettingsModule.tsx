@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import styles from './SettingsModule.module.css';
-import { FaBell, FaInfoCircle, FaSave, FaTable, FaGift } from 'react-icons/fa';
+import { FaBell, FaInfoCircle, FaSave, FaTable, FaGift, FaUsers } from 'react-icons/fa';
 import FlatFileConfigurator from './FlatFileConfigurator';
+import UsersList from './UsersList';
 
 export default function SettingsModule() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
@@ -156,6 +157,11 @@ export default function SettingsModule() {
             disabled={!newYearMessageEnabled}
           />
         </div>
+      </div>
+
+      <div className={styles.settingsSection}>
+        <h3 className={styles.sectionTitle}><FaUsers className={styles.sectionIcon} /> Gestión de Usuarios</h3>
+        <UsersList />
       </div>
 
       <div className={styles.settingsSection}>

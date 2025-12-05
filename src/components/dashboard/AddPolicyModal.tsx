@@ -1,8 +1,9 @@
 'use client';
-import { useState, useEffect } from 'react';
-import styles from './AddPolicyModal.module.css'; // Using a new styles file for AddPolicyModal
+import { useState, useEffect, useCallback } from 'react';
+import styles from './AddPolicyModal.module.css';
 import CreatableSelect from '@/components/ui/CreatableSelect';
 import Dropzone from '@/components/ui/Dropzone';
+import { FaSearch, FaUser } from 'react-icons/fa'; // Import icons
 
 // Define the structure of a general policy (duplicated for clarity, ideally shared)
 interface GeneralPolicy {
@@ -10,9 +11,9 @@ interface GeneralPolicy {
   etiquetaOficina?: string;
   etiquetaCliente?: string;
   aseguradora?: string;
-  clientNombreCompleto?: string; // New: comes from Client table join
-  clientTipoIdentificacion?: string; // New: comes from Client table join
-  clientNumeroIdentificacion?: string; // New: comes from Client table join
+  clientNombreCompleto?: string;
+  clientTipoIdentificacion?: string;
+  clientNumeroIdentificacion?: string;
   ramo?: string;
   numeroPoliza?: string;
   fechaExpedicion?: string;
@@ -29,6 +30,14 @@ interface GeneralPolicy {
 interface Option {
   value: string;
   label: string;
+}
+
+// Client interface from client list, but simplified for this use
+interface Client {
+  id: string;
+  nombreCompleto: string;
+  tipoIdentificacion: string;
+  numeroIdentificacion: string;
 }
 
 interface AddPolicyModalProps {
@@ -62,6 +71,11 @@ const AddPolicyModal: React.FC<AddPolicyModalProps> = ({ onClose, initialData, p
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // State for client lookup
+  const [clientSearchLoading, setClientSearchLoading] = useState(false);
+  const [clientSearchError, setClientSearchError] = useState<string | null>(null);
+  const [foundClientData, setFoundClientData] = useState<Client | null>(null);
+
   useEffect(() => {
     const data = policyToEdit || initialData;
     if (data) {
@@ -93,6 +107,15 @@ const AddPolicyModal: React.FC<AddPolicyModalProps> = ({ onClose, initialData, p
       if (data.ramo) {
         setRamo({ value: data.ramo, label: data.ramo });
       }
+      // If initial data has client ID, we should try to fetch the full client data
+      if (data.clientNumeroIdentificacion) {
+        handleNumeroIdentificacionChange({
+            target: {
+                id: 'clientNumeroIdentificacion',
+                value: data.clientNumeroIdentificacion
+            }
+        } as React.ChangeEvent<HTMLInputElement>);
+      }
     }
   }, [initialData, policyToEdit]);
 
@@ -100,6 +123,55 @@ const AddPolicyModal: React.FC<AddPolicyModalProps> = ({ onClose, initialData, p
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { id, value, type, checked } = e.target as HTMLInputElement;
     setFormData((prev) => ({ ...prev, [id]: type === 'checkbox' ? checked : value }));
+  };
+
+  const debounce = (func: (...args: any[]) => void, delay: number) => {
+    let timeout: NodeJS.Timeout;
+    return (...args: any[]) => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func(...args), delay);
+    };
+  };
+
+  const searchClient = useCallback(debounce(async (numeroIdentificacion: string) => {
+    if (!numeroIdentificacion) {
+      setFoundClientData(null);
+      setFormData(prev => ({ ...prev, clientNombreCompleto: '' }));
+      setClientSearchError(null);
+      return;
+    }
+
+    setClientSearchLoading(true);
+    setClientSearchError(null);
+    try {
+      const res = await fetch(`/api/clients?numeroIdentificacion=${numeroIdentificacion}`);
+      if (!res.ok) {
+        throw new Error('Error al buscar cliente');
+      }
+      const data: Client[] = await res.json();
+      if (data.length > 0) {
+        setFoundClientData(data[0]);
+        setFormData(prev => ({ ...prev, clientNombreCompleto: data[0].nombreCompleto, clientTipoIdentificacion: data[0].tipoIdentificacion }));
+      } else {
+        setFoundClientData(null);
+        // Only clear if the user hasn't typed anything else into nombreCompleto
+        if (formData.clientNombreCompleto === (initialData?.clientNombreCompleto || policyToEdit?.clientNombreCompleto || '')) {
+            setFormData(prev => ({ ...prev, clientNombreCompleto: '' }));
+        }
+      }
+    } catch (err: any) {
+      setClientSearchError(err.message);
+      setFoundClientData(null);
+    } finally {
+      setClientSearchLoading(false);
+    }
+  }, 500), [formData.clientNombreCompleto, initialData, policyToEdit]);
+
+
+  const handleNumeroIdentificacionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target;
+    setFormData(prev => ({ ...prev, clientNumeroIdentificacion: value }));
+    searchClient(value);
   };
 
   const handleCreateOption = async (apiUrl: string, inputValue: string): Promise<Option> => {
@@ -131,9 +203,16 @@ const AddPolicyModal: React.FC<AddPolicyModalProps> = ({ onClose, initialData, p
       data.append('etiquetaOficina', etiquetaOficina.label);
       data.append('etiquetaCliente', etiquetaCliente.label);
       data.append('aseguradora', aseguradora.label);
+      
       data.append('nombreRazonSocial', formData.clientNombreCompleto);
       data.append('tipoIdentificacion', formData.clientTipoIdentificacion);
       data.append('numeroIdentificacion', formData.clientNumeroIdentificacion);
+
+      // Append found clientId if exists
+      if (foundClientData?.id) {
+        data.append('clientId', foundClientData.id);
+      }
+      
       data.append('ramo', ramo.label);
       data.append('numeroPoliza', formData.numeroPoliza);
       data.append('fechaExpedicion', formData.fechaExpedicion);
@@ -186,7 +265,7 @@ const AddPolicyModal: React.FC<AddPolicyModalProps> = ({ onClose, initialData, p
             <div className={styles.formGroup}>
               <label htmlFor="etiquetaOficina">Etiqueta (Oficina)</label>
               <CreatableSelect
-                apiUrl="/api/etiquetas" // Reusing endpoint, can be changed to /api/oficinas if needed
+                apiUrl="/api/etiquetas"
                 value={etiquetaOficina}
                 onChange={setEtiquetaOficina}
                 onCreate={(inputValue) => handleCreateOption('/api/etiquetas', inputValue)}
@@ -219,7 +298,7 @@ const AddPolicyModal: React.FC<AddPolicyModalProps> = ({ onClose, initialData, p
             <div className={styles.formGroup}>
               <label htmlFor="ramo">Ramo</label>
               <CreatableSelect
-                apiUrl="/api/ramos" // NEW endpoint needed
+                apiUrl="/api/ramos"
                 value={ramo}
                 onChange={setRamo}
                 onCreate={(inputValue) => handleCreateOption('/api/ramos', inputValue)}
@@ -230,12 +309,35 @@ const AddPolicyModal: React.FC<AddPolicyModalProps> = ({ onClose, initialData, p
 
           <div className={styles.formRow}>
             <div className={styles.formGroup}>
-              <label htmlFor="clientNombreCompleto">Nombre Completo / Razón Social del Tomador</label>
-              <input type="text" id="clientNombreCompleto" placeholder="Ej: Juan Pérez" value={formData.clientNombreCompleto} onChange={handleChange} />
+              <label htmlFor="clientNumeroIdentificacion">Número de Identificación del Tomador</label>
+              <div className={styles.inputWithIcon}>
+                <FaSearch className={styles.inputIcon} />
+                <input type="text" id="clientNumeroIdentificacion" value={formData.clientNumeroIdentificacion} onChange={handleNumeroIdentificacionChange} />
+              </div>
+              {clientSearchLoading && <p className={styles.searchStatus}>Buscando cliente...</p>}
+              {clientSearchError && <p className={styles.searchError}>{clientSearchError}</p>}
             </div>
             <div className={styles.formGroup}>
+              <label htmlFor="clientNombreCompleto">Nombre Completo / Razón Social del Tomador</label>
+              <div className={styles.inputWithIcon}>
+                <FaUser className={styles.inputIcon} />
+                <input
+                  type="text"
+                  id="clientNombreCompleto"
+                  placeholder="Ej: Juan Pérez"
+                  value={foundClientData?.nombreCompleto || formData.clientNombreCompleto}
+                  onChange={handleChange}
+                  readOnly={!!foundClientData}
+                  className={foundClientData ? styles.readOnlyInput : ''}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className={styles.formRow}>
+            <div className={styles.formGroup}>
               <label htmlFor="clientTipoIdentificacion">Tipo de Identificación del Tomador</label>
-              <select id="clientTipoIdentificacion" value={formData.clientTipoIdentificacion} onChange={handleChange}>
+              <select id="clientTipoIdentificacion" value={formData.clientTipoIdentificacion} onChange={handleChange} disabled={!!foundClientData}>
                 <option value="">Selecciona</option>
                 <option value="CC">Cédula de Ciudadanía</option>
                 <option value="NIT">NIT</option>
@@ -243,18 +345,12 @@ const AddPolicyModal: React.FC<AddPolicyModalProps> = ({ onClose, initialData, p
                 <option value="PA">Pasaporte</option>
               </select>
             </div>
-          </div>
-
-          <div className={styles.formRow}>
-            <div className={styles.formGroup}>
-              <label htmlFor="clientNumeroIdentificacion">Número de Identificación del Tomador</label>
-              <input type="text" id="clientNumeroIdentificacion" value={formData.clientNumeroIdentificacion} onChange={handleChange} />
-            </div>
             <div className={styles.formGroup}>
               <label htmlFor="numeroPoliza">Número de Póliza</label>
               <input type="text" id="numeroPoliza" value={formData.numeroPoliza} onChange={handleChange} />
             </div>
           </div>
+          
 
           <div className={styles.formRow}>
             <div className={styles.formGroup}>

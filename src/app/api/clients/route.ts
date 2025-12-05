@@ -1,12 +1,24 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { pool } from '@/lib/db';
 import { customAlphabet } from 'nanoid';
 
 const nanoid = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyz', 12);
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const [rows] = await pool.query('SELECT * FROM Client ORDER BY nombreCompleto ASC');
+    const numeroIdentificacion = request.nextUrl.searchParams.get('numeroIdentificacion');
+
+    let query = 'SELECT * FROM Client';
+    const params: any[] = [];
+
+    if (numeroIdentificacion) {
+      query += ' WHERE numeroIdentificacion = ?';
+      params.push(numeroIdentificacion);
+    }
+    
+    query += ' ORDER BY nombreCompleto ASC';
+
+    const [rows] = await pool.query(query, params);
     return NextResponse.json(rows);
   } catch (error) {
     console.error("Error fetching clients:", error);

@@ -5,6 +5,7 @@ import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import styles from './ClientList.module.css';
 import AddClientModal from './AddClientModal';
+import ClientDetailsModal from './ClientDetailsModal';
 
 // This interface should match the database schema
 interface Client {
@@ -25,6 +26,8 @@ export default function ClientList() {
   const [globalFilter, setGlobalFilter] = useState<string>('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [clientToEdit, setClientToEdit] = useState<Client | null>(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
 
   const fetchClients = async () => {
     setLoading(true);
@@ -53,6 +56,17 @@ export default function ClientList() {
     setClientToEdit(null);
     setIsModalOpen(false);
     fetchClients();
+  };
+
+  const handleOpenDetailsModal = (client: Client) => {
+    setSelectedClient(client);
+    setIsDetailsModalOpen(true);
+  };
+
+  const handleCloseDetailsModal = () => {
+    setSelectedClient(null);
+    setIsDetailsModalOpen(false);
+    fetchClients(); // Also refresh data when this modal closes
   };
 
   const handleEditClient = (client: Client) => {
@@ -97,7 +111,7 @@ export default function ClientList() {
         header: 'Acciones',
         cell: ({ row }) => (
           <div className={styles.actionButtons}>
-            <button onClick={() => handleEditClient(row.original)} className={styles.actionButton}>Editar</button>
+            <button onClick={() => handleOpenDetailsModal(row.original)} className={styles.actionButton}>Ver Detalles</button>
             <button onClick={() => handleDeleteClient(row.original.id)} className={`${styles.actionButton} ${styles.deleteButton}`}>Eliminar</button>
           </div>
         ),
@@ -131,7 +145,7 @@ export default function ClientList() {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Clientes');
     const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-    const data = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' });
+    const data = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF--8' });
     saveAs(data, 'Reporte_Clientes.xlsx');
   };
 
@@ -179,6 +193,9 @@ export default function ClientList() {
         </table>
       </div>
       {isModalOpen && <AddClientModal onClose={handleCloseModal} clientToEdit={clientToEdit} />}
+      {isDetailsModalOpen && selectedClient && (
+        <ClientDetailsModal client={selectedClient} onClose={handleCloseDetailsModal} />
+      )}
     </div>
   );
 }

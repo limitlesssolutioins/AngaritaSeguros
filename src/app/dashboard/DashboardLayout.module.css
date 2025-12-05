@@ -1,0 +1,19 @@
+.dashboardContainer {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: #f0f2f5;
+}
+
+.dashboardContent {
+    flex-grow: 1;
+    padding: 0;
+    width: 100%;
+}
+
+.pageTitle {
+  font-size: 1.875rem; /* text-3xl */
+  font-weight: 700; /* font-bold */
+  color: #003440; /* text-brand-blue */
+  margin-bottom: 2rem;
+}

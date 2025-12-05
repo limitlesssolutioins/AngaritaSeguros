@@ -19,7 +19,6 @@ const DashboardNavbar: React.FC<DashboardNavbarProps> = ({ activeSection, setAct
     { name: 'Pólizas Generales', section: 'general-policies', icon: FaFileContract },
     { name: 'Cumplimiento', section: 'cumplimiento', icon: FaFileContract },
     { name: 'Configuración', section: 'settings', icon: FaCog },
-    { name: 'Usuarios', section: 'users', icon: FaUserCircle },
   ];
 
   return (

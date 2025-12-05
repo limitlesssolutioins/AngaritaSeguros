@@ -1,30 +1,34 @@
 .navbar {
   background-color: #003440; /* Dark background for the dashboard navbar */
-  padding: 1rem 2rem;
+  padding: 0.5rem 0; /* Removed horizontal padding */
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .container {
   display: flex;
-  justify-content: space-around;
+  justify-content: space-around; /* Distribute items now that they are narrow */
   align-items: center;
-  max-width: 1200px;
-  margin: 0 auto;
+  gap: 0.5rem;
 }
 
 .navLink {
   color: #FFFFFF;
   text-decoration: none;
-  padding: 0.5rem 1rem;
+  padding: 0.5rem;
   border-radius: 0.25rem;
   transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
   display: flex;
+  flex-direction: column; /* Stack icon and text vertically */
   align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-width: 80px; /* Give a uniform width to each button */
+  font-size: 0.75rem; /* Smaller font for the text */
 }
 
 .navIcon {
-  margin-right: 0.5rem;
-  font-size: 1.2rem;
+  margin-bottom: 0.3rem; /* Space between icon and text */
+  font-size: 1.4rem; /* Slightly larger icon */
 }
 
 .navLink:hover {

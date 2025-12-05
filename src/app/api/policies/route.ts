@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 import { pool } from '@/lib/db'; // Import the mysql2 connection pool
@@ -6,9 +6,11 @@ import { customAlphabet } from 'nanoid'; // For generating CUIDs
 
 const nanoid = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyz', 12); // Simulating CUIDs
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const [rows] = await pool.query(`
+    const clientId = request.nextUrl.searchParams.get('clientId');
+
+    let baseQuery = `
       SELECT 
         gp.id, gp.numeroPoliza, gp.fechaExpedicion, gp.fechaInicio, gp.fechaFinVigencia, 
         gp.placa, gp.valorPrimaNeta, gp.valorTotalAPagar, gp.financiado, gp.financiera, 
@@ -26,19 +28,28 @@ export async function GET() {
       LEFT JOIN Etiqueta eo ON gp.etiquetaOficinaId = eo.id
       LEFT JOIN Ramo r ON gp.ramoId = r.id
       LEFT JOIN Client c ON gp.clientId = c.id
-      ORDER BY gp.createdAt DESC
-    `);
+    `;
+
+    const params: any[] = [];
+    if (clientId) {
+      baseQuery += ' WHERE gp.clientId = ?';
+      params.push(clientId);
+    }
+
+    baseQuery += ' ORDER BY gp.createdAt DESC';
+
+    const [rows] = await pool.query(baseQuery, params);
     
     const policies = rows as any[]; 
     
     const formattedPolicies = policies.map(p => ({
       ...p,
-      fechaExpedicion: p.fechaExpedicion.toISOString(),
-      fechaInicio: p.fechaInicio.toISOString(),
-      fechaFinVigencia: p.fechaFinVigencia.toISOString(),
-      createdAt: p.createdAt.toISOString(),
-      updatedAt: p.updatedAt.toISOString(),
-      files: JSON.parse(p.files || '[]') // Parse JSON string from DB
+      fechaExpedicion: p.fechaExpedicion?.toISOString(),
+      fechaInicio: p.fechaInicio?.toISOString(),
+      fechaFinVigencia: p.fechaFinVigencia?.toISOString(),
+      createdAt: p.createdAt?.toISOString(),
+      updatedAt: p.updatedAt?.toISOString(),
+      files: p.files ? JSON.parse(p.files) : [] // Parse JSON string from DB, handle null
     }));
 
     return NextResponse.json(formattedPolicies);
@@ -141,41 +152,41 @@ export async function POST(request: Request) {
     } else {
       clientId = `cl${nanoid()}`;
       await pool.query(
-        `INSERT INTO Client (id, nombreCompleto, tipoIdentificacion, numeroIdentificacion, createdAt, updatedAt) 
-         VALUES (?, ?, ?, NOW(), NOW())`,
+        `INSERT INTO Client (id, nombreCompleto, tipoIdentificacion, numeroIdentificacion) 
+         VALUES (?, ?, ?, ?)`,
         [clientId, clientNombreCompleto, clientTipoIdentificacion, clientNumeroIdentificacion]
       );
     }
 
 
     const policyId = `cl${nanoid()}`;
-    await pool.query(
-      `INSERT INTO GeneralPolicy (
-        id, etiquetaOficinaId, etiquetaClienteId, aseguradoraId, clientId, ramoId, numeroPoliza, 
-        fechaExpedicion, fechaInicio, fechaFinVigencia, placa, valorPrimaNeta, 
-        valorTotalAPagar, financiado, financiera, files, createdAt, updatedAt
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
-      [
-        policyId,
-        etiquetaOficinaId,
-        etiquetaClienteId,
-        aseguradoraId,
-        clientId, // Use the client ID here
-        ramoId,
-        numeroPoliza,
-        new Date(fechaExpedicion),
-        new Date(fechaInicio),
-        new Date(fechaFinVigencia),
-        placa || null,
-        parseFloat(valorPrimaNeta),
-        parseFloat(valorTotalAPagar),
-        financiado,
-        financiera || null,
-        JSON.stringify(uploadedFilePaths), // Storing as JSON string
-      ]
-    );
-
-    return NextResponse.json({ message: 'Póliza general creada exitosamente', policy: { id: policyId, numeroPoliza, clientNombreCompleto } }, { status: 201 });
+            await pool.query(
+              `INSERT INTO GeneralPolicy (
+                id, etiquetaOficinaId, etiquetaClienteId, aseguradoraId, clientId, ramoId, numeroPoliza,
+                fechaExpedicion, fechaInicio, fechaFinVigencia, placa, valorPrimaNeta,
+                valorTotalAPagar, financiado, financiera, files, createdAt, updatedAt
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              [
+                policyId,
+                etiquetaOficinaId,
+                etiquetaClienteId,
+                aseguradoraId,
+                clientId, // Use the client ID here
+                ramoId,
+                numeroPoliza,
+                new Date(fechaExpedicion),
+                new Date(fechaInicio),
+                new Date(fechaFinVigencia),
+                placa || null,
+                parseFloat(valorPrimaNeta),
+                parseFloat(valorTotalAPagar),
+                financiado,
+                financiera || null,
+                JSON.stringify(uploadedFilePaths), // Storing as JSON string
+                new Date(), // Value for createdAt
+                new Date(), // Value for updatedAt
+              ]
+            );    return NextResponse.json({ message: 'Póliza general creada exitosamente', policy: { id: policyId, numeroPoliza, clientNombreCompleto } }, { status: 201 });
 
   } catch (error: any) {
     console.error('Error creating general policy:', error);

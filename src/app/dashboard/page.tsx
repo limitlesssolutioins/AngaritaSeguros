@@ -11,9 +11,9 @@ import CarteraList from '@/components/dashboard/CarteraList';
 import GestionEmpresarialModule from '@/components/dashboard/GestionEmpresarialModule';
 import SettingsModule from '@/components/dashboard/SettingsModule';
 import CumplimientoModule from '@/components/dashboard/CumplimientoModule';
-import PolicyModule from '@/components/dashboard/PolicyModule'; // Import the new PolicyModule
-import ComunicacionModule from '@/components/dashboard/ComunicacionModule'; // Import the new ComunicacionModule
-import styles from './DashboardPage.module.css'; // Import CSS Module
+import PolicyModule from '@/components/dashboard/PolicyModule';
+import ComunicacionModule from '@/components/dashboard/ComunicacionModule';
+import styles from './DashboardLayout.module.css'; // Use layout's CSS
 
 export default function DashboardPage() {
   const [activeSection, setActiveSection] = useState('requests');
@@ -34,13 +34,11 @@ export default function DashboardPage() {
         return 'Gestión Empresarial';
       case 'settings':
         return 'Configuración';
-      case 'users':
-        return 'Gestión de Usuarios';
       case 'cumplimiento':
         return 'Pólizas de Cumplimiento';
-      case 'general-policies': // New case for general policies
+      case 'general-policies':
         return 'Pólizas Generales';
-      case 'comunicacion': // New case for communication
+      case 'comunicacion':
         return 'Módulo de Comunicación';
       default:
         return 'Dashboard';
@@ -48,72 +46,63 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className={styles.dashboardContainer}>
+    <>
       <DashboardNavbar activeSection={activeSection} setActiveSection={setActiveSection} />
 
-      {/* Main Content */}
-      <main className={styles.mainContent}>
-        <h1 className={styles.pageTitle}>{getSectionTitle()}</h1>
-        
-        {activeSection === 'requests' && (
-          <div>
-            <RequestsList />
-          </div>
-        )}
+      {/* Main Content is now directly inside the layout's main tag */}
+      <h1 className={styles.pageTitle}>{getSectionTitle()}</h1>
+      
+      {activeSection === 'requests' && (
+        <div>
+          <RequestsList />
+        </div>
+      )}
 
-        {activeSection === 'users' && (
-          <div>
-            <UsersList />
-          </div>
-        )}
-
-        {/* Add conditional rendering for other sections here */}
-        {activeSection === 'clients' && (
-          <div>
-            <ClientList />
-          </div>
-        )}
-        {activeSection === 'tasks' && (
-          <div>
-            <TaskList />
-          </div>
-        )}
-        {activeSection === 'cartera' && (
-          <div>
-            <CarteraList />
-          </div>
-        )}
-        {activeSection === 'reports' && (
-          <div>
-            <ReportsModule />
-          </div>
-        )}
-        {activeSection === 'gestion-empresarial' && (
-          <div>
-            <GestionEmpresarialModule />
-          </div>
-        )}
-        {activeSection === 'settings' && (
-          <div>
-            <SettingsModule />
-          </div>
-        )}
-        {activeSection === 'cumplimiento' && (
-          <div>
-            <CumplimientoModule />
-          </div>
-        )}
-        {activeSection === 'general-policies' && ( // Conditional rendering for the new module
-          <div>
-            <PolicyModule />
-          </div>
-        )}
-        {activeSection === 'comunicacion' && ( // Conditional rendering for the new module
-          <div>
-            <ComunicacionModule />
-          </div>
-        )}
-      </main>
-    </div>
+      {activeSection === 'clients' && (
+        <div>
+          <ClientList />
+        </div>
+      )}
+      {activeSection === 'tasks' && (
+        <div>
+          <TaskList />
+        </div>
+      )}
+      {activeSection === 'cartera' && (
+        <div>
+          <CarteraList />
+        </div>
+      )}
+      {activeSection === 'reports' && (
+        <div>
+          <ReportsModule />
+        </div>
+      )}
+      {activeSection === 'gestion-empresarial' && (
+        <div>
+          <GestionEmpresarialModule />
+        </div>
+      )}
+      {activeSection === 'settings' && (
+        <div>
+          <SettingsModule />
+        </div>
+      )}
+      {activeSection === 'cumplimiento' && (
+        <div>
+          <CumplimientoModule />
+        </div>
+      )}
+      {activeSection === 'general-policies' && (
+        <div>
+          <PolicyModule />
+        </div>
+      )}
+      {activeSection === 'comunicacion' && (
+        <div>
+          <ComunicacionModule />
+        </div>
+      )}
+    </>
   );
 }

@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import ClientLayoutWrapper from "@/components/layout/ClientLayoutWrapper";
-import styles from './layout.module.css';
+import ConditionalLayoutWrapper from "@/components/layout/ConditionalLayoutWrapper";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -19,11 +18,9 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={inter.className}>
-        <ClientLayoutWrapper>
-          <div className={styles.body}>
-            {children}
-          </div>
-        </ClientLayoutWrapper>
+        <ConditionalLayoutWrapper>
+          {children}
+        </ConditionalLayoutWrapper>
       </body>
     </html>
   );

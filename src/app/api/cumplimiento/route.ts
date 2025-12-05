@@ -115,8 +115,8 @@ export async function POST(request: Request) {
     } else {
       clientId = `cl${nanoid()}`;
       await pool.query(
-        `INSERT INTO Client (id, nombreCompleto, numeroIdentificacion, tipoIdentificacion, createdAt, updatedAt) 
-         VALUES (?, ?, ?, ?, NOW(), NOW())`,
+        `INSERT INTO Client (id, nombreCompleto, numeroIdentificacion, tipoIdentificacion) 
+         VALUES (?, ?, ?, ?)`,
         [clientId, clientNombreCompleto, clientNumeroIdentificacion, tipoIdentificacion]
       );
     }

@@ -152,3 +152,40 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* New styles for client lookup */
+.inputWithIcon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.inputWithIcon input {
+  padding-left: 0.75rem; /* Standard padding */
+  padding-right: 3rem; /* Space for icon on the right */
+}
+
+.inputIcon {
+  position: absolute;
+  right: 15px; /* Icon on the right */
+  left: auto; /* Remove left positioning */
+  color: #adb5bd;
+  font-size: 1.2rem;
+}
+
+.searchStatus {
+  font-size: 0.85rem;
+  color: #007bff;
+  margin-top: 0.5rem;
+}
+
+.searchError {
+  font-size: 0.85rem;
+  color: #dc3545;
+  margin-top: 0.5rem;
+}
+
+.readOnlyInput {
+  background-color: #e9ecef;
+  cursor: not-allowed;
+}
