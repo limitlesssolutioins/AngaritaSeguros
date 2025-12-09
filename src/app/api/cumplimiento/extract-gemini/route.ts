@@ -35,27 +35,23 @@ export async function POST(req: NextRequest) {
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' }); 
 
-        const prompt = `
-            Extrae la siguiente información de este documento de póliza de cumplimiento y devuélvela en formato JSON.
-            El JSON debe tener las siguientes claves:
-            - "numeroPoliza" (string, solo el número, sin letras ni prefijos)
-            - "tomadorPoliza" (string, el nombre del cliente o empresa tomador de la póliza)
-            - "tipoIdentificacion" (string, ej: "CC", "NIT", "CE", "PA")
-            - "numeroIdentificacion" (string, el número de identificación del tomador)
-            - "fechaExpedicion" (string en formato YYYY-MM-DD)
-            - "fechaInicioVigencia" (string en formato YYYY-MM-DD)
-            - "fechaTerminacionVigencia" (string en formato YYYY-MM-DD)
-            - "valorPrimaNeta" (número, sin comas ni puntos para miles)
-            - "valorTotalAPagar" (número, sin comas ni puntos para miles)
-            - "numeroAnexos" (número, busca un campo específico en el PDF llamado "No. Anexo" o "Número de Anexo")
-            - "tipoPoliza" (string, el tipo de póliza o amparo principal, ej: "Seriedad de oferta" o "Cumplimiento")
-            - "aseguradora" (string, el nombre de la compañía de seguros)
-            - "etiquetaCliente" (string, que debe ser el mismo valor que tomadorPoliza)
-            
-            Analiza el documento completo para encontrar todos los campos. Presta especial atención a los valores numéricos, las fechas en el formato especificado y a extraer únicamente los números para el 'numeroPoliza'.
-
-            Asegúrate de que el resultado sea únicamente el objeto JSON válido, sin ningún otro texto o formato como 'json'.
-        `;
+    const prompt = `
+      Extract the following information from the provided insurance policy document.
+      Return ONLY a raw JSON object (no markdown, no backticks).
+      Keys:
+      - clientNombreCompleto (Name of the policy holder/tomador)
+      - clientNumeroIdentificacion (ID number of the policy holder)
+      - tipoIdentificacion (ID type code. MUST be one of: 'CC', 'NIT', 'CE', 'PA')
+      - numeroPoliza (Policy number)
+      - fechaExpedicion (YYYY-MM-DD)
+      - fechaInicioVigencia (YYYY-MM-DD)
+      - fechaTerminacionVigencia (YYYY-MM-DD)
+      - aseguradora (Name of the insurance company)
+      - valorPrimaNeta (Net premium value, number only)
+      - valorTotalAPagar (Total value to pay, number only)
+      - numeroAnexos (Annex number, default to 0 if not found)
+      - tipoPoliza (Type of policy)
+    `;
 
         const filePart = {
             inlineData: {

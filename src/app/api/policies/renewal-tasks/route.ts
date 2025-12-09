@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { pool } from '@/lib/db'; // Import the mysql2 connection pool
 
+export const dynamic = 'force-dynamic'; // Ensures this route is not statically optimized
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;

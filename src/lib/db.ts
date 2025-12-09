@@ -26,22 +26,25 @@ const poolOptions = {
     database: dbConfig.database,
     port: dbConfig.port,
     waitForConnections: true,
-    connectionLimit: 10,
+    connectionLimit: 5, // Reduced limit to be conservative with remote connections
     queueLimit: 0,
-    enableKeepAlive: true,
-    keepAliveInitialDelay: 30000,
-    connectTimeout: 10000,
-    idleTimeout: 60000,
+    enableKeepAlive: true, // Re-enabled to prevent server closing idle connections
+    keepAliveInitialDelay: 0, // Send keepalive immediately/frequently
+    connectTimeout: 20000,
+    idleTimeout: 30000, // Close idle connections faster to avoid stale ones
 };
 
 let pool: Pool;
 
+// In this specific environment, the singleton pattern is causing ECONNRESET issues
+// because the global connection pool becomes stale or broken after a restart or timeout.
+// We will force creating a new pool for every request in development to ensure reliability,
+// even though it's less efficient.
 if (process.env.NODE_ENV === 'production') {
   pool = createPool(poolOptions);
 } else {
-  // Always create a new pool in development to avoid issues with hot-reloading
-  // This is less efficient but more robust against ECONNRESET in dev
-  pool = createPool(poolOptions);
+  // force new pool every time module is loaded/refreshed
+   pool = createPool(poolOptions);
 }
 
 export { pool };

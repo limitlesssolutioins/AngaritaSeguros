@@ -5,31 +5,58 @@ import { useRouter } from 'next/navigation';
 import styles from './Login.module.css';
 
 export default function LoginPage() {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // For now, we'll just navigate to the dashboard without actual validation
-    console.log('Attempting to log in with:', { username, password });
-    router.push('/dashboard');
+    setError(null);
+    setLoading(true);
+
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        console.log('Login successful:', data.user);
+        router.push('/dashboard');
+      } else {
+        setError(data.error || 'Login failed');
+      }
+    } catch (err) {
+      console.error('Login request failed:', err);
+      setError('Network error, please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className={styles.loginContainer}>
       <div className={styles.loginCard}>
         <h1 className={styles.title}>Iniciar Sesión</h1>
+        {error && <p className={styles.errorMessage}>{error}</p>}
         <form onSubmit={handleLogin} className={styles.loginForm}>
           <div className={styles.inputGroup}>
-            <label htmlFor="username" className={styles.label}>Usuario</label>
+            <label htmlFor="email" className={styles.label}>Email</label>
             <input
-              type="text"
-              id="username"
+              type="email"
+              id="email"
               className={styles.input}
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required
+              disabled={loading}
             />
           </div>
           <div className={styles.inputGroup}>
@@ -41,9 +68,12 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              disabled={loading}
             />
           </div>
-          <button type="submit" className={styles.button}>Entrar</button>
+          <button type="submit" className={styles.button} disabled={loading}>
+            {loading ? 'Cargando...' : 'Entrar'}
+          </button>
         </form>
       </div>
     </div>

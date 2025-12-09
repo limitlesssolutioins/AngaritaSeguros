@@ -6,9 +6,18 @@
 
 .container {
   display: flex;
-  justify-content: space-around; /* Distribute items now that they are narrow */
+  justify-content: space-between; /* Space between nav items and logout */
+  align-items: center;
+  padding: 0 1rem; /* Add some padding to the ends */
+  width: 100%;
+}
+
+.navItems {
+  display: flex;
+  justify-content: center;
   align-items: center;
   gap: 0.5rem;
+  flex-grow: 1; /* Allow nav items to take up available space */
 }
 
 .navLink {
@@ -24,6 +33,9 @@
   text-align: center;
   min-width: 80px; /* Give a uniform width to each button */
   font-size: 0.75rem; /* Smaller font for the text */
+  background: none;
+  border: none;
+  cursor: pointer;
 }
 
 .navIcon {
@@ -39,4 +51,13 @@
 .activeNavLink {
   background-color: #0a9396; /* Highlight color for active link */
   font-weight: bold;
+}
+
+.logoutButton {
+  margin-left: auto; /* Push to the right if needed, though space-between handles it */
+  border-left: 1px solid rgba(255,255,255,0.1); /* Separator */
+}
+
+.logoutButton:hover {
+  background-color: #ae2012; /* Red for logout */
 }

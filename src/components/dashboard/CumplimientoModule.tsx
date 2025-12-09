@@ -71,12 +71,26 @@ const CumplimientoModule = () => {
           fetch('/api/etiquetas'),
           fetch('/api/aseguradoras'),
         ]);
-        const etiquetasData = await etiquetasRes.json();
-        const aseguradorasData = await aseguradorasRes.json();
-        setEtiquetas(etiquetasData);
-        setAseguradoras(aseguradorasData);
+
+        if (etiquetasRes.ok) {
+          const etiquetasData = await etiquetasRes.json();
+          setEtiquetas(Array.isArray(etiquetasData) ? etiquetasData : []);
+        } else {
+          console.error("Failed to fetch etiquetas");
+          setEtiquetas([]);
+        }
+
+        if (aseguradorasRes.ok) {
+          const aseguradorasData = await aseguradorasRes.json();
+          setAseguradoras(Array.isArray(aseguradorasData) ? aseguradorasData : []);
+        } else {
+          console.error("Failed to fetch aseguradoras");
+          setAseguradoras([]);
+        }
       } catch (error) {
         console.error("Error fetching filter data", error);
+        setEtiquetas([]);
+        setAseguradoras([]);
       }
     };
     fetchFilterData();

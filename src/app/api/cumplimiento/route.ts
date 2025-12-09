@@ -3,12 +3,43 @@ import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 import { pool } from '@/lib/db'; // Import the mysql2 connection pool
 import { customAlphabet } from 'nanoid'; // For generating CUIDs
+import { cookies } from 'next/headers'; // Import cookies
+import { verifyToken } from '@/lib/auth'; // Import verifyToken
 
 const nanoid = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyz', 12); // Simulating CUIDs
 
-export async function GET() {
+// Helper to get user info, handling middleware header propagation issues
+async function getAuthenticatedUser(request: Request) {
+  let userId = request.headers.get('x-user-id');
+  let userRole = request.headers.get('x-user-role');
+  let userOffice = request.headers.get('x-user-office');
+
+  // Fallback: Check cookie directly if headers are missing (middleware bypass issue)
+  if (!userId) {
+    const token = cookies().get('auth_token')?.value;
+    if (token) {
+      try {
+        const decoded = await verifyToken(token);
+        userId = decoded.id as string;
+        userRole = decoded.role as string;
+        userOffice = decoded.office as string;
+      } catch (error) {
+        console.error('Token verification failed in API route fallback:', error);
+      }
+    }
+  }
+  return { userId, userRole, userOffice };
+}
+
+export async function GET(request: Request) {
   try {
-    const [rows] = await pool.query(`
+    const { userId, userRole } = await getAuthenticatedUser(request);
+
+    if (!userId) {
+      return NextResponse.json({ message: 'User not authenticated' }, { status: 401 });
+    }
+
+    let query = `
       SELECT 
         p.id, p.numeroPoliza, 
         c.nombreCompleto AS clientNombreCompleto, c.numeroIdentificacion, c.tipoIdentificacion,
@@ -23,8 +54,17 @@ export async function GET() {
       LEFT JOIN Etiqueta eo ON p.etiquetaOficinaId = eo.id
       LEFT JOIN Etiqueta ec ON p.etiquetaClienteId = ec.id
       LEFT JOIN Client c ON p.clientId = c.id
-      ORDER BY p.createdAt DESC
-    `);
+    `;
+    const queryParams: (string | undefined)[] = [];
+
+    if (userRole === 'Agent' && userId) {
+      query += ` WHERE p.userId = ?`;
+      queryParams.push(userId);
+    }
+
+    query += ` ORDER BY p.createdAt DESC`;
+    
+    const [rows] = await pool.query(query, queryParams);
     
     const policies = rows as any[]; 
     
@@ -48,9 +88,29 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const { userId, userOffice } = await getAuthenticatedUser(request);
+
+    if (!userId) {
+      // console.log('[API/Cumplimiento] Missing x-user-id header.'); // Removed debugging log
+      // console.log('Headers:', Object.fromEntries(request.headers)); // Removed debugging log
+      return NextResponse.json({ message: 'User not authenticated' }, { status: 401 });
+    }
+
+    // Fetch user's office to automatically assign 'etiquetaOficina'
+    // This logic relies on userOffice coming from getAuthenticatedUser now, not from a DB query
+    let etiquetaOficinaName = userOffice;
+    if (!etiquetaOficinaName) {
+       // Fallback if office not in token or not set
+       const [userRows]: any = await pool.query('SELECT office FROM User WHERE id = ?', [userId]);
+       if (userRows.length === 0 || !userRows[0].office) {
+          return NextResponse.json({ message: 'User office not found. Cannot assign office tag.' }, { status: 400 });
+       }
+       etiquetaOficinaName = userRows[0].office;
+    }
+
     const data = await request.formData();
     
-    const etiquetaOficinaName = data.get('etiquetaOficina') as string;
+    // const etiquetaOficinaName = data.get('etiquetaOficina') as string; // Removed manual retrieval
     const etiquetaClienteName = data.get('etiquetaCliente') as string;
     const clientNombreCompleto = data.get('tomadorPoliza') as string; // Will be client's name
     const clientNumeroIdentificacion = data.get('numeroIdentificacion') as string; // New field for client identification
@@ -127,8 +187,8 @@ export async function POST(request: Request) {
       `INSERT INTO Policy (
         id, numeroPoliza, fechaExpedicion, fechaInicioVigencia, 
         fechaTerminacionVigencia, valorPrimaNeta, valorTotalAPagar, numeroAnexos, 
-        tipoPoliza, aseguradoraId, etiquetaOficinaId, etiquetaClienteId, clientId, files, createdAt, updatedAt
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+        tipoPoliza, aseguradoraId, etiquetaOficinaId, etiquetaClienteId, clientId, files, userId, createdAt, updatedAt
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
       [
         policyId,
         numeroPoliza,
@@ -144,6 +204,7 @@ export async function POST(request: Request) {
         etiquetaClienteId,
         clientId, // Use the client ID here
         JSON.stringify(uploadedFilePaths),
+        userId, // Assign the authenticated user's ID
       ]
     );
 
@@ -157,3 +218,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: 'Error interno del servidor al crear la póliza' }, { status: 500 });
   }
 }
+

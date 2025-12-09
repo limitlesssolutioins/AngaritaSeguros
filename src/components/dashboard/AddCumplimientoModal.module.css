@@ -9,37 +9,56 @@
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  backdrop-filter: blur(5px); /* Added for modern effect */
 }
 
 .modalContent {
   background-color: #fff;
-  padding: 2rem;
+  padding: 1.5rem; /* Slightly reduced padding for smaller screens by default */
   border-radius: 8px;
-  width: 90%;
-  max-width: 900px; /* Increased max-width for two columns */
+  width: 95%; /* Wider on small screens */
+  max-width: 900px; 
+  max-height: 90vh; /* Limit height to viewport height */
+  overflow-y: auto; /* Allow scrolling within the modal if content overflows */
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
   position: relative;
+  display: flex; /* Ensure flex behavior for header/form structure */
+  flex-direction: column;
+}
+
+@media (min-width: 768px) {
+  .modalContent {
+    padding: 2rem; /* Restore larger padding on wider screens */
+    width: 90%;
+  }
 }
 
 .modalHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem; /* Slightly reduced margin */
   border-bottom: 1px solid #eee;
-  padding-bottom: 1rem;
+  padding-bottom: 0.8rem; /* Slightly reduced padding */
+  flex-shrink: 0; /* Prevent header from shrinking */
 }
 
 .modalHeader h2 {
   margin: 0;
-  font-size: 1.8rem;
+  font-size: 1.5rem; /* Adjusted font size for smaller screens */
   color: #333;
+}
+
+@media (min-width: 768px) {
+  .modalHeader h2 {
+    font-size: 1.8rem; /* Restore larger font size */
+  }
 }
 
 .closeButton {
   background: none;
   border: none;
-  font-size: 2rem;
+  font-size: 1.8rem; /* Adjusted font size for smaller screens */
   cursor: pointer;
   color: #666;
 }
@@ -52,15 +71,24 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  flex-grow: 1; /* Allow form to grow and take available space */
 }
 
 .formRow {
   display: flex;
-  gap: 1.5rem; /* Space between columns */
+  flex-direction: column; /* Stack columns by default on small screens */
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .formRow {
+    flex-direction: row; /* Two columns on larger screens */
+    gap: 1.5rem;
+  }
 }
 
 .formRow > .formGroup {
-  flex: 1; /* Each form group takes equal width */
+  flex: 1; 
 }
 
 .formGroup {
@@ -116,7 +144,18 @@
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
-  margin-top: 2rem;
+  margin-top: 1.5rem; /* Adjusted margin */
+  flex-shrink: 0; /* Prevent actions from shrinking */
+}
+
+@media (max-width: 767px) {
+  .formActions {
+    flex-direction: column; /* Stack buttons on small screens */
+    gap: 0.8rem;
+  }
+  .cancelButton, .saveButton {
+    width: 100%; /* Full width buttons on small screens */
+  }
 }
 
 .cancelButton,
@@ -161,16 +200,15 @@
 }
 
 .inputWithIcon input {
-  padding-left: 0.75rem; /* Standard padding */
-  padding-right: 3rem; /* Space for icon on the right */
+  padding-left: 0.75rem; 
+  padding-right: 2.5rem; /* Adjusted padding for icon */
 }
 
 .inputIcon {
   position: absolute;
-  right: 15px; /* Icon on the right */
-  left: auto; /* Remove left positioning */
+  right: 10px; /* Icon on the right */
   color: #adb5bd;
-  font-size: 1.2rem;
+  font-size: 1.1rem; /* Slightly smaller icon */
 }
 
 .searchStatus {

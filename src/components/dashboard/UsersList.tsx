@@ -1,23 +1,27 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useReactTable, getCoreRowModel, flexRender, ColumnDef } from '@tanstack/react-table';
-import styles from './UsersList.module.css'; // Create this CSS module
+import styles from './UsersList.module.css';
 import UserFormModal from './UserFormModal';
 
 interface UserData {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'agent' | 'viewer';
-  permissions: string[];
+  role: 'Superadmin' | 'Admin' | 'Agent';
+  office: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-const mockUsers: UserData[] = [
-  { id: 'U001', name: 'Admin User', email: 'admin@example.com', role: 'admin', permissions: ['manage_users', 'manage_clients', 'manage_requests', 'view_reports'] },
-  { id: 'U002', name: 'Agent Smith', email: 'agent@example.com', role: 'agent', permissions: ['manage_clients', 'manage_requests'] },
-  { id: 'U003', name: 'Viewer John', email: 'viewer@example.com', role: 'viewer', permissions: ['view_clients', 'view_reports'] },
-];
+interface NewUserPayload {
+  name: string;
+  email: string;
+  password?: string;
+  role: 'Superadmin' | 'Admin' | 'Agent';
+  office: string;
+}
 
 export default function UsersList() {
   const [users, setUsers] = useState<UserData[]>([]);
@@ -25,36 +29,90 @@ export default function UsersList() {
   const [error, setError] = useState<string | null>(null);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [userToEdit, setUserToEdit] = useState<UserData | null>(null);
+  const [isNewUser, setIsNewUser] = useState(false);
 
-  useEffect(() => {
-    // Simulate API call
-    setUsers(mockUsers);
-    setLoading(false);
+  const fetchUsers = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/users');
+      if (!response.ok) {
+        throw new Error('Error al cargar usuarios');
+      }
+      const data: UserData[] = await response.json();
+      setUsers(data);
+    } catch (err: any) {
+      setError(err.message);
+      console.error("Failed to fetch users:", err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const handleAddUser = (newUser: Omit<UserData, 'id'>) => {
-    const newId = 'U' + (users.length + 1).toString().padStart(3, '0');
-    setUsers(prev => [...prev, { ...newUser, id: newId }]);
-  };
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
-  const handleSaveUser = (updatedUser: Omit<UserData, 'id'>, id?: string) => {
-    if (id) {
-      setUsers(prev => prev.map(user => (user.id === id ? { ...updatedUser, id } : user)));
-    } else {
-      handleAddUser(updatedUser);
+  const handleSaveUser = async (userData: NewUserPayload, id?: string) => {
+    setError(null);
+    try {
+      let response;
+      if (id && !isNewUser) { // Editing existing user
+        response = await fetch(`/api/users/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(userData),
+        });
+      } else { // Adding new user
+        response = await fetch('/api/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(userData),
+        });
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Error al ${id ? 'actualizar' : 'crear'} el usuario.`);
+      }
+
+      alert(`Usuario ${id ? 'actualizado' : 'creado'} exitosamente`);
+      setIsFormModalOpen(false);
+      setUserToEdit(null);
+      fetchUsers(); // Re-fetch users to update the list
+    } catch (err: any) {
+      setError(err.message);
+      console.error(`Failed to ${id ? 'update' : 'create'} user:`, err);
+      alert(`Error: ${err.message}`);
     }
-    setIsFormModalOpen(false);
-    setUserToEdit(null);
   };
 
   const handleEditClick = (user: UserData) => {
     setUserToEdit(user);
+    setIsNewUser(false);
     setIsFormModalOpen(true);
   };
 
-  const handleDeleteUser = (userId: string) => {
+  const handleDeleteUser = async (userId: string) => {
     if (confirm('¿Estás seguro de que quieres eliminar este usuario?')) {
-      setUsers(prev => prev.filter(user => user.id !== userId));
+      setError(null);
+      try {
+        const response = await fetch(`/api/users/${userId}`, {
+          method: 'DELETE',
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Error al eliminar el usuario');
+        }
+
+        alert('Usuario eliminado exitosamente');
+        fetchUsers(); // Re-fetch users to update the list
+      } catch (err: any) {
+        setError(err.message);
+        console.error("Failed to delete user:", err);
+        alert(`Error: ${err.message}`);
+      }
     }
   };
 
@@ -62,28 +120,23 @@ export default function UsersList() {
     () => [
       { accessorKey: 'name', header: 'Nombre' },
       { accessorKey: 'email', header: 'Email' },
+      { accessorKey: 'office', header: 'Oficina' },
       {
         accessorKey: 'role',
         header: 'Rol',
         cell: info => {
           const role = info.getValue() as UserData['role'];
           return (
-            <span className={`${styles.roleBadge} ${styles[role]}`}>
-              {role === 'admin' ? 'Administrador' : role === 'agent' ? 'Agente' : 'Visualizador'}
+            <span className={`${styles.roleBadge} ${styles[role.toLowerCase()]}`}>
+              {role === 'Superadmin' ? 'Superadministrador' : role === 'Admin' ? 'Administrador' : 'Agente'}
             </span>
           );
         },
       },
       {
-        accessorKey: 'permissions',
-        header: 'Permisos',
-        cell: info => (
-          <div className={styles.permissionsCell}>
-            {(info.getValue() as string[]).map(p => (
-              <span key={p} className={styles.permissionTag}>{p.replace(/_/g, ' ')}</span>
-            ))}
-          </div>
-        ),
+        accessorKey: 'createdAt',
+        header: 'Fecha Creación',
+        cell: info => new Date(info.getValue() as string).toLocaleDateString(),
       },
       {
         id: 'actions',
@@ -96,7 +149,7 @@ export default function UsersList() {
         ),
       },
     ],
-    [users] // Re-memoize if users change to update actions
+    [] // No need to re-memoize on users change as data is passed directly to table instance
   );
 
   const table = useReactTable({
@@ -114,46 +167,51 @@ export default function UsersList() {
   }
 
   return (
-    <div className={styles.usersListContainer}> {/* Re-using container style */}
+    <div className={styles.usersListContainer}>
       <div className={styles.controlsContainer}>
         <button
-          onClick={() => { setUserToEdit(null); setIsFormModalOpen(true); }}
+          onClick={() => { setUserToEdit(null); setIsNewUser(true); setIsFormModalOpen(true); }}
           className={styles.addButton}
         >
           Agregar Usuario
         </button>
       </div>
-      <div className={styles.tableWrapper}>
-        <table className={styles.table}>
-          <thead>
-            {table.getHeaderGroups().map(headerGroup => (
-              <tr key={headerGroup.id} className={styles.tableHeaderRow}>
-                {headerGroup.headers.map(header => (
-                  <th key={header.id} className={styles.tableHeader}>
-                    {flexRender(header.column.columnDef.header, header.getContext())}
-                  </th>
-                ))}
-              </tr>
-            ))}
-          </thead>
-          <tbody>
-            {table.getRowModel().rows.map(row => (
-              <tr key={row.id} className={styles.tableRow}>
-                {row.getVisibleCells().map(cell => (
-                  <td key={cell.id} className={styles.tableCell}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {users.length === 0 ? (
+        <p>No hay usuarios creados todavía.</p>
+      ) : (
+        <div className={styles.tableWrapper}>
+          <table className={styles.table}>
+            <thead>
+              {table.getHeaderGroups().map(headerGroup => (
+                <tr key={headerGroup.id} className={styles.tableHeaderRow}>
+                  {headerGroup.headers.map(header => (
+                    <th key={header.id} className={styles.tableHeader}>
+                      {flexRender(header.column.columnDef.header, header.getContext())}
+                    </th>
+                  ))}
+                </tr>
+              ))}
+            </thead>
+            <tbody>
+              {table.getRowModel().rows.map(row => (
+                <tr key={row.id} className={styles.tableRow}>
+                  {row.getVisibleCells().map(cell => (
+                    <td key={cell.id} className={styles.tableCell}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
       <UserFormModal
         isOpen={isFormModalOpen}
-        onClose={() => setIsFormModalOpen(false)}
+        onClose={() => { setIsFormModalOpen(false); setUserToEdit(null); }}
         onSaveUser={handleSaveUser}
         userToEdit={userToEdit}
+        isNewUser={isNewUser}
       />
     </div>
   );

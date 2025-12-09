@@ -59,7 +59,7 @@ const AddCumplimientoModal: React.FC<AddCumplimientoModalProps> = ({ onClose, in
     numeroAnexos: '',
     tipoPoliza: '',
   });
-  const [etiquetaOficina, setEtiquetaOficina] = useState<Option | null>(null);
+  // const [etiquetaOficina, setEtiquetaOficina] = useState<Option | null>(null); // Removed manual office selection
   const [etiquetaCliente, setEtiquetaCliente] = useState<Option | null>(null);
   const [aseguradora, setAseguradora] = useState<Option | null>(null);
   const [files, setFiles] = useState<File[]>([]);
@@ -69,7 +69,25 @@ const AddCumplimientoModal: React.FC<AddCumplimientoModalProps> = ({ onClose, in
   // State for client lookup
   const [clientSearchLoading, setClientSearchLoading] = useState(false);
   const [clientSearchError, setClientSearchError] = useState<string | null>(null);
+  const [clientSearchMessage, setClientSearchMessage] = useState<string | null>(null);
   const [foundClientData, setFoundClientData] = useState<Client | null>(null);
+  const [userOffice, setUserOffice] = useState<string>(''); // State for user office
+
+  useEffect(() => {
+    // Fetch current user info to get office
+    const fetchUserOffice = async () => {
+      try {
+        const res = await fetch('/api/auth/me');
+        if (res.ok) {
+          const userData = await res.json();
+          setUserOffice(userData.office || '');
+        }
+      } catch (err) {
+        console.error("Error fetching user info", err);
+      }
+    };
+    fetchUserOffice();
+  }, []);
 
   useEffect(() => {
     const data = policyToEdit || initialData;
@@ -92,9 +110,9 @@ const AddCumplimientoModal: React.FC<AddCumplimientoModalProps> = ({ onClose, in
       if (data.aseguradora) {
         setAseguradora({ value: data.aseguradora, label: data.aseguradora });
       }
-      if (data.etiquetaOficina) {
-        setEtiquetaOficina({ value: data.etiquetaOficina, label: data.etiquetaOficina });
-      }
+      // if (data.etiquetaOficina) { // Removed manual office selection
+      //   setEtiquetaOficina({ value: data.etiquetaOficina, label: data.etiquetaOficina });
+      // }
       if (data.etiquetaCliente) {
         setEtiquetaCliente({ value: data.etiquetaCliente, label: data.etiquetaCliente });
       }
@@ -126,9 +144,10 @@ const AddCumplimientoModal: React.FC<AddCumplimientoModalProps> = ({ onClose, in
   };
 
   const searchClient = useCallback(debounce(async (numeroIdentificacion: string) => {
+    setClientSearchMessage(null); // Clear previous messages
     if (!numeroIdentificacion) {
       setFoundClientData(null);
-      setFormData(prev => ({ ...prev, clientNombreCompleto: '', tipoIdentificacion: '' }));
+      // setFormData(prev => ({ ...prev, clientNombreCompleto: '', tipoIdentificacion: '' })); // Optional: keep or clear
       setClientSearchError(null);
       return;
     }
@@ -150,9 +169,8 @@ const AddCumplimientoModal: React.FC<AddCumplimientoModalProps> = ({ onClose, in
         }));
       } else {
         setFoundClientData(null);
+        setClientSearchMessage('Cliente no encontrado. Ingrese los datos para crear uno nuevo.'); // Set info message
         // If client is not found, retain the nombreCompleto and tipoIdentificacion from initialData/formData
-        // Do not clear them, as they might come from Gemini extraction.
-        // setFormData(prev => ({ ...prev, clientNombreCompleto: '', tipoIdentificacion: '' })); // REMOVED THIS CLEARING LOGIC
       }
     } catch (err: any) {
       setClientSearchError(err.message);
@@ -160,7 +178,7 @@ const AddCumplimientoModal: React.FC<AddCumplimientoModalProps> = ({ onClose, in
     } finally {
       setClientSearchLoading(false);
     }
-  }, 500), [formData.clientNombreCompleto, initialData, policyToEdit]);
+  }, 500), [initialData, policyToEdit]); // Removed dependency on formData.clientNombreCompleto to prevent loops
 
 
   const handleNumeroIdentificacionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -169,8 +187,8 @@ const AddCumplimientoModal: React.FC<AddCumplimientoModalProps> = ({ onClose, in
     searchClient(value);
   };
 
-  const handleCreateOption = async (apiUrl: string, inputValue: string): Promise<Option> => {
-    const response = await fetch(apiUrl, {
+  const handleCreateOption = async (inputValue: string): Promise<Option> => {
+    const response = await fetch('/api/etiquetas', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: inputValue }),
@@ -207,7 +225,7 @@ const AddCumplimientoModal: React.FC<AddCumplimientoModalProps> = ({ onClose, in
     setIsSubmitting(true);
     try {
       const data = new FormData();
-      if(etiquetaOficina) data.append('etiquetaOficina', etiquetaOficina.label);
+      // if(etiquetaOficina) data.append('etiquetaOficina', etiquetaOficina.label); // Removed manual office
       data.append('etiquetaCliente', etiquetaCliente.label);
       data.append('tomadorPoliza', formData.clientNombreCompleto); // Send client's full name
       data.append('numeroIdentificacion', formData.clientNumeroIdentificacion); // Send identification number
@@ -266,14 +284,16 @@ const AddCumplimientoModal: React.FC<AddCumplimientoModalProps> = ({ onClose, in
         </div>
         <form className={styles.form} onSubmit={handleSubmit}>
           <div className={styles.formRow}>
+             {/* Re-added Etiqueta Oficina as Read-Only */}
             <div className={styles.formGroup}>
-                <label htmlFor="etiquetaOficina">Etiqueta (Oficina)</label>
-                <CreatableSelect
-                    apiUrl="/api/etiquetas"
-                    value={etiquetaOficina}
-                    onChange={setEtiquetaOficina}
-                    onCreate={handleCreateOption}
-                    placeholder="Selecciona o crea..."
+                <label htmlFor="userOffice">Etiqueta (Oficina)</label>
+                <input 
+                  type="text" 
+                  id="userOffice" 
+                  value={userOffice} 
+                  readOnly 
+                  className={styles.readOnlyInput} 
+                  placeholder="Cargando oficina..."
                 />
             </div>
             <div className={styles.formGroup}>
@@ -297,6 +317,7 @@ const AddCumplimientoModal: React.FC<AddCumplimientoModalProps> = ({ onClose, in
               </div>
               {clientSearchLoading && <p className={styles.searchStatus}>Buscando cliente...</p>}
               {clientSearchError && <p className={styles.searchError}>{clientSearchError}</p>}
+              {clientSearchMessage && <p className={styles.searchInfo}>{clientSearchMessage}</p>}
             </div>
             <div className={styles.formGroup}>
                 <label htmlFor="clientNombreCompleto">Nombre Completo del Tomador</label>
@@ -305,7 +326,7 @@ const AddCumplimientoModal: React.FC<AddCumplimientoModalProps> = ({ onClose, in
                   <input
                     type="text"
                     id="clientNombreCompleto"
-                    value={foundClientData?.nombreCompleto || formData.clientNombreCompleto}
+                    value={formData.clientNombreCompleto} // CHANGED: Always reflect formData
                     onChange={handleChange}
                     readOnly={!!foundClientData}
                     className={foundClientData ? styles.readOnlyInput : ''}
@@ -318,7 +339,7 @@ const AddCumplimientoModal: React.FC<AddCumplimientoModalProps> = ({ onClose, in
               <label htmlFor="tipoIdentificacion">Tipo de Identificación del Tomador</label>
               <select 
                 id="tipoIdentificacion" 
-                value={foundClientData?.tipoIdentificacion || formData.tipoIdentificacion} 
+                value={formData.tipoIdentificacion} // CHANGED: Always reflect formData
                 onChange={handleChange} 
                 disabled={!!foundClientData}
                 className={foundClientData ? styles.readOnlyInput : ''}
