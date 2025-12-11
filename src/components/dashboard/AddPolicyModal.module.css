@@ -9,37 +9,56 @@
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  backdrop-filter: blur(5px);
 }
 
 .modalContent {
   background-color: #fff;
-  padding: 2rem;
+  padding: 1.5rem;
   border-radius: 8px;
-  width: 90%;
-  max-width: 900px; /* Increased max-width for two columns */
+  width: 95%;
+  max-width: 900px;
+  max-height: 90vh; /* Important for small screens */
+  overflow-y: auto; /* Enable scrolling */
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
   position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 768px) {
+  .modalContent {
+    padding: 2rem;
+    width: 90%;
+  }
 }
 
 .modalHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   border-bottom: 1px solid #eee;
-  padding-bottom: 1rem;
+  padding-bottom: 0.8rem;
+  flex-shrink: 0;
 }
 
 .modalHeader h2 {
   margin: 0;
-  font-size: 1.8rem;
+  font-size: 1.5rem;
   color: #333;
+}
+
+@media (min-width: 768px) {
+  .modalHeader h2 {
+    font-size: 1.8rem;
+  }
 }
 
 .closeButton {
   background: none;
   border: none;
-  font-size: 2rem;
+  font-size: 1.8rem;
   cursor: pointer;
   color: #666;
 }
@@ -52,15 +71,24 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  flex-grow: 1;
 }
 
 .formRow {
   display: flex;
-  gap: 1.5rem; /* Space between columns */
+  flex-direction: column; /* Stack on mobile */
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .formRow {
+    flex-direction: row; /* Row on desktop */
+    gap: 1.5rem;
+  }
 }
 
 .formRow > .formGroup {
-  flex: 1; /* Each form group takes equal width */
+  flex: 1;
 }
 
 .formGroup {
@@ -116,7 +144,18 @@
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
-  margin-top: 2rem;
+  margin-top: 1.5rem;
+  flex-shrink: 0;
+}
+
+@media (max-width: 767px) {
+  .formActions {
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+  .cancelButton, .saveButton {
+    width: 100%;
+  }
 }
 
 .cancelButton,
@@ -161,16 +200,15 @@
 }
 
 .inputWithIcon input {
-  padding-left: 0.75rem; /* Standard padding */
-  padding-right: 3rem; /* Space for icon on the right */
+  padding-left: 0.75rem;
+  padding-right: 2.5rem;
 }
 
 .inputIcon {
   position: absolute;
-  right: 15px; /* Icon on the right */
-  left: auto; /* Remove left positioning */
+  right: 10px;
   color: #adb5bd;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
 }
 
 .searchStatus {

@@ -63,7 +63,6 @@ const AddPolicyModal: React.FC<AddPolicyModalProps> = ({ onClose, initialData, p
     financiado: false,
     financiera: '',
   });
-  const [etiquetaOficina, setEtiquetaOficina] = useState<Option | null>(null);
   const [etiquetaCliente, setEtiquetaCliente] = useState<Option | null>(null);
   const [aseguradora, setAseguradora] = useState<Option | null>(null);
   const [ramo, setRamo] = useState<Option | null>(null);
@@ -75,6 +74,23 @@ const AddPolicyModal: React.FC<AddPolicyModalProps> = ({ onClose, initialData, p
   const [clientSearchLoading, setClientSearchLoading] = useState(false);
   const [clientSearchError, setClientSearchError] = useState<string | null>(null);
   const [foundClientData, setFoundClientData] = useState<Client | null>(null);
+  const [userOffice, setUserOffice] = useState<string>(''); // State for user office
+
+  useEffect(() => {
+    // Fetch current user info to get office
+    const fetchUserOffice = async () => {
+      try {
+        const res = await fetch('/api/auth/me');
+        if (res.ok) {
+          const userData = await res.json();
+          setUserOffice(userData.office || '');
+        }
+      } catch (err) {
+        console.error("Error fetching user info", err);
+      }
+    };
+    fetchUserOffice();
+  }, []);
 
   useEffect(() => {
     const data = policyToEdit || initialData;
@@ -95,9 +111,9 @@ const AddPolicyModal: React.FC<AddPolicyModalProps> = ({ onClose, initialData, p
         financiera: data.financiera || '',
       }));
 
-      if (data.etiquetaOficina) {
-        setEtiquetaOficina({ value: data.etiquetaOficina, label: data.etiquetaOficina });
-      }
+      // if (data.etiquetaOficina) { // Removed manual office selection
+      //   setEtiquetaOficina({ value: data.etiquetaOficina, label: data.etiquetaOficina });
+      // }
       if (data.etiquetaCliente) {
         setEtiquetaCliente({ value: data.etiquetaCliente, label: data.etiquetaCliente });
       }
@@ -192,15 +208,21 @@ const AddPolicyModal: React.FC<AddPolicyModalProps> = ({ onClose, initialData, p
     setError(null);
 
     // Basic validation
-    if (!etiquetaOficina || !etiquetaCliente || !aseguradora || !ramo || !formData.clientNombreCompleto || !formData.clientTipoIdentificacion || !formData.clientNumeroIdentificacion || !formData.numeroPoliza || !formData.fechaExpedicion || !formData.fechaInicio || !formData.fechaFinVigencia || !formData.valorPrimaNeta || !formData.valorTotalAPagar || (formData.financiado && !formData.financiera)) {
-      setError('Por favor, complete todos los campos obligatorios.');
+    if (!userOffice || !etiquetaCliente || !aseguradora || !ramo || !formData.clientNombreCompleto || !formData.clientTipoIdentificacion || !formData.clientNumeroIdentificacion || !formData.numeroPoliza || !formData.fechaExpedicion || !formData.fechaInicio || !formData.fechaFinVigencia || !formData.valorPrimaNeta || !formData.valorTotalAPagar || (formData.financiado && !formData.financiera)) {
+      if (!userOffice) {
+        setError('No se pudo cargar la información de la oficina. Por favor, recargue la página.');
+      } else {
+        setError('Por favor, complete todos los campos obligatorios.');
+      }
       return;
     }
 
     setIsSubmitting(true);
     try {
       const data = new FormData();
-      data.append('etiquetaOficina', etiquetaOficina.label);
+      if (userOffice) {
+          data.append('etiquetaOficina', userOffice);
+      }
       data.append('etiquetaCliente', etiquetaCliente.label);
       data.append('aseguradora', aseguradora.label);
       
@@ -263,13 +285,14 @@ const AddPolicyModal: React.FC<AddPolicyModalProps> = ({ onClose, initialData, p
         <form className={styles.form} onSubmit={handleSubmit}>
           <div className={styles.formRow}>
             <div className={styles.formGroup}>
-              <label htmlFor="etiquetaOficina">Etiqueta (Oficina)</label>
-              <CreatableSelect
-                apiUrl="/api/etiquetas"
-                value={etiquetaOficina}
-                onChange={setEtiquetaOficina}
-                onCreate={(inputValue) => handleCreateOption('/api/etiquetas', inputValue)}
-                placeholder="Selecciona o escribe para crear..."
+              <label htmlFor="userOffice">Etiqueta (Oficina)</label>
+              <input 
+                  type="text" 
+                  id="userOffice" 
+                  value={userOffice} 
+                  readOnly 
+                  className={styles.readOnlyInput} 
+                  placeholder="Cargando oficina..."
               />
             </div>
             <div className={styles.formGroup}>

@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
             - "valorTotalAPagar" (número, sin comas ni puntos para miles)
             - "financiado" (booleano, true si la póliza indica que es financiada, de lo contrario false)
             - "financiera" (string, si es financiado, el nombre de la entidad financiera, de lo contrario string vacío "")
-            - "etiquetaCliente" (string, el nombre del cliente o empresa tomador de la póliza)
+            - "clientNombreCompleto" (string, el nombre del cliente o empresa tomador de la póliza)
             - "clientTipoIdentificacion" (string, ej: "NIT" o "CC")
             - "clientNumeroIdentificacion" (string, el número de identificación del tomador)
             
@@ -66,7 +66,28 @@ export async function POST(req: NextRequest) {
             },
         };
 
-        const result = await model.generateContent([prompt, filePart]);
+        let result;
+        let retryCount = 0;
+        const maxRetries = 3;
+        
+        while (true) {
+            try {
+                result = await model.generateContent([prompt, filePart]);
+                break;
+            } catch (error: any) {
+                retryCount++;
+                const isOverloaded = error.message?.includes('503') || error.toString().includes('503');
+                
+                if (isOverloaded && retryCount <= maxRetries) {
+                    console.warn(`Gemini model overloaded (503), retrying attempt ${retryCount}/${maxRetries}...`);
+                    // Exponential backoff: 2s, 4s, 8s
+                    await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retryCount)));
+                } else {
+                    throw error;
+                }
+            }
+        }
+
         const response = await result.response;
         let jsonString = response.text();
         
