@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import path from 'path';
 import { pool } from '@/lib/db'; // Import the mysql2 connection pool
 import { customAlphabet } from 'nanoid'; // For generating CUIDs
 import { cookies } from 'next/headers'; // Import cookies
 import { verifyToken } from '@/lib/auth'; // Import verifyToken
+import { uploadFileToS3 } from '@/lib/s3'; // Import S3 upload function
 
 const nanoid = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyz', 12); // Simulating CUIDs
 
@@ -39,10 +38,13 @@ export async function GET(request: Request) {
       return NextResponse.json({ message: 'User not authenticated' }, { status: 401 });
     }
 
+    const url = new URL(request.url);
+    const clientId = url.searchParams.get('clientId');
+
     let query = `
       SELECT 
         p.id, p.numeroPoliza, 
-        c.nombreCompleto AS clientNombreCompleto, c.numeroIdentificacion, c.tipoIdentificacion,
+        c.nombreCompleto AS clientNombreCompleto, c.numeroIdentificacion AS clientNumeroIdentificacion, c.tipoIdentificacion,
         p.fechaExpedicion, p.fechaInicioVigencia, 
         p.fechaTerminacionVigencia, p.valorPrimaNeta, p.valorTotalAPagar, p.numeroAnexos, 
         p.tipoPoliza, p.files, p.createdAt, p.updatedAt,
@@ -56,10 +58,20 @@ export async function GET(request: Request) {
       LEFT JOIN Client c ON p.clientId = c.id
     `;
     const queryParams: (string | undefined)[] = [];
+    const whereConditions: string[] = [];
 
     if (userRole === 'Agent' && userId) {
-      query += ` WHERE p.userId = ?`;
+      whereConditions.push(`p.userId = ?`);
       queryParams.push(userId);
+    }
+
+    if (clientId) {
+      whereConditions.push(`p.clientId = ?`);
+      queryParams.push(clientId);
+    }
+
+    if (whereConditions.length > 0) {
+      query += ` WHERE ${whereConditions.join(' AND ')}`;
     }
 
     query += ` ORDER BY p.createdAt DESC`;
@@ -132,15 +144,9 @@ export async function POST(request: Request) {
 
     const uploadedFilePaths: string[] = [];
     if (files && files.length > 0) {
-      const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'cumplimiento');
-      await mkdir(uploadDir, { recursive: true });
       for (const file of files) {
-        const bytes = await file.arrayBuffer();
-        const buffer = Buffer.from(bytes);
-        const uniqueFilename = `${Date.now()}-${file.name}`;
-        const filePath = path.join(uploadDir, uniqueFilename);
-        await writeFile(filePath, buffer);
-        uploadedFilePaths.push(`/uploads/cumplimiento/${uniqueFilename}`);
+        const s3Url = await uploadFileToS3(file, 'cumplimiento'); // Upload to 'cumplimiento' folder in S3
+        uploadedFilePaths.push(s3Url);
       }
     }
 

@@ -44,9 +44,10 @@ interface AddPolicyModalProps {
   onClose: () => void;
   initialData?: Partial<GeneralPolicy> | null;
   policyToEdit?: GeneralPolicy | null;
+  initialFile?: File | null; // Add prop
 }
 
-const AddPolicyModal: React.FC<AddPolicyModalProps> = ({ onClose, initialData, policyToEdit }) => {
+const AddPolicyModal: React.FC<AddPolicyModalProps> = ({ onClose, initialData, policyToEdit, initialFile }) => {
   const isEditMode = !!policyToEdit;
 
   const [formData, setFormData] = useState({
@@ -67,6 +68,7 @@ const AddPolicyModal: React.FC<AddPolicyModalProps> = ({ onClose, initialData, p
   const [aseguradora, setAseguradora] = useState<Option | null>(null);
   const [ramo, setRamo] = useState<Option | null>(null);
   const [files, setFiles] = useState<File[]>([]);
+  const [existingFiles, setExistingFiles] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -92,9 +94,72 @@ const AddPolicyModal: React.FC<AddPolicyModalProps> = ({ onClose, initialData, p
     fetchUserOffice();
   }, []);
 
+  const handleDeleteExistingFile = async (fileUrl: string) => {
+    if (!confirm('¿Eliminar este archivo? Esta acción no se puede deshacer.')) return;
+    try {
+      const res = await fetch('/api/files/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileUrl,
+          policyId: policyToEdit?.id,
+          type: 'general'
+        })
+      });
+
+      if (!res.ok) {
+        throw new Error('Error al eliminar archivo');
+      }
+
+      setExistingFiles(prev => prev.filter(f => f !== fileUrl));
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  const formatCurrency = (value: string | number) => {
+    if (value === '' || value === undefined || value === null) return '';
+    let numberValue: number;
+    if (typeof value === 'string') {
+        let clean = value.replace(/[$\s]/g, '').replace(/\./g, '').replace(',', '.');
+        numberValue = parseFloat(clean);
+    } else {
+        numberValue = value;
+    }
+    if (isNaN(numberValue)) return '';
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency', currency: 'COP', minimumFractionDigits: 0, maximumFractionDigits: 2,
+    }).format(numberValue);
+  };
+
+  const parseCurrencyValue = (value: string) => {
+      if (!value) return '';
+      return value.replace(/[$\s]/g, '').replace(/\./g, '');
+  };
+
+  const handleCurrencyFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    const raw = parseCurrencyValue(value);
+    setFormData(prev => ({ ...prev, [id]: raw }));
+  };
+
+  const handleCurrencyBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    const formatted = formatCurrency(value);
+    setFormData(prev => ({ ...prev, [id]: formatted }));
+  };
+
   useEffect(() => {
+    // Set initial file
+    if (initialFile) {
+        setFiles([initialFile]);
+    }
+
     const data = policyToEdit || initialData;
     if (data) {
+      if (data.files) {
+        setExistingFiles(data.files);
+      }
       setFormData(prev => ({
         ...prev,
         clientNombreCompleto: data.clientNombreCompleto || '',
@@ -105,8 +170,8 @@ const AddPolicyModal: React.FC<AddPolicyModalProps> = ({ onClose, initialData, p
         fechaInicio: data.fechaInicio ? new Date(data.fechaInicio).toISOString().split('T')[0] : prev.fechaInicio,
         fechaFinVigencia: data.fechaFinVigencia ? new Date(data.fechaFinVigencia).toISOString().split('T')[0] : prev.fechaFinVigencia,
         placa: data.placa || '',
-        valorPrimaNeta: data.valorPrimaNeta?.toString() || '',
-        valorTotalAPagar: data.valorTotalAPagar?.toString() || '',
+        valorPrimaNeta: data.valorPrimaNeta ? formatCurrency(data.valorPrimaNeta) : '',
+        valorTotalAPagar: data.valorTotalAPagar ? formatCurrency(data.valorTotalAPagar) : '',
         financiado: data.financiado || false,
         financiera: data.financiera || '',
       }));
@@ -241,8 +306,12 @@ const AddPolicyModal: React.FC<AddPolicyModalProps> = ({ onClose, initialData, p
       data.append('fechaInicio', formData.fechaInicio);
       data.append('fechaFinVigencia', formData.fechaFinVigencia);
       data.append('placa', formData.placa || '');
-      data.append('valorPrimaNeta', formData.valorPrimaNeta);
-      data.append('valorTotalAPagar', formData.valorTotalAPagar);
+      
+      const valorPrimaNetaClean = parseCurrencyValue(formData.valorPrimaNeta).replace(',', '.');
+      const valorTotalAPagarClean = parseCurrencyValue(formData.valorTotalAPagar).replace(',', '.');
+      data.append('valorPrimaNeta', valorPrimaNetaClean);
+      data.append('valorTotalAPagar', valorTotalAPagarClean);
+      
       data.append('financiado', formData.financiado.toString());
       data.append('financiera', formData.financiera || '');
 
@@ -397,14 +466,28 @@ const AddPolicyModal: React.FC<AddPolicyModalProps> = ({ onClose, initialData, p
             </div>
             <div className={styles.formGroup}>
               <label htmlFor="valorPrimaNeta">Valor Prima Neta</label>
-              <input type="number" id="valorPrimaNeta" value={formData.valorPrimaNeta} onChange={handleChange} />
+              <input 
+                type="text" 
+                id="valorPrimaNeta" 
+                value={formData.valorPrimaNeta} 
+                onChange={handleChange} 
+                onFocus={handleCurrencyFocus}
+                onBlur={handleCurrencyBlur}
+              />
             </div>
           </div>
 
           <div className={styles.formRow}>
             <div className={styles.formGroup}>
               <label htmlFor="valorTotalAPagar">Valor Total a Pagar</label>
-              <input type="number" id="valorTotalAPagar" value={formData.valorTotalAPagar} onChange={handleChange} />
+              <input 
+                type="text" 
+                id="valorTotalAPagar" 
+                value={formData.valorTotalAPagar} 
+                onChange={handleChange} 
+                onFocus={handleCurrencyFocus}
+                onBlur={handleCurrencyBlur}
+              />
             </div>
             <div className={styles.formGroup}>
               <label htmlFor="financiado">Financiado</label>
@@ -421,12 +504,31 @@ const AddPolicyModal: React.FC<AddPolicyModalProps> = ({ onClose, initialData, p
             </div>
           )}
 
-          {!isEditMode && (
-            <div className={styles.formGroup}>
-              <label>Adjuntar Archivos</label>
-              <Dropzone onFilesAccepted={setFiles} />
-            </div>
-          )}
+          <div className={styles.formGroup}>
+            <label>Adjuntar Archivos</label>
+            
+            {isEditMode && existingFiles.length > 0 && (
+              <ul className={styles.existingFilesList}>
+                {existingFiles.map((fileUrl, index) => (
+                  <li key={index} className={styles.existingFileItem}>
+                    <a href={`/api/files/view?url=${encodeURIComponent(fileUrl)}`} target="_blank" rel="noreferrer">
+                      Archivo {index + 1}
+                    </a>
+                    <button 
+                      type="button" 
+                      className={styles.deleteFileButton}
+                      onClick={() => handleDeleteExistingFile(fileUrl)}
+                      style={{ marginLeft: '10px', color: 'red', cursor: 'pointer' }}
+                    >
+                      Eliminar
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <Dropzone onFilesAccepted={(newFiles) => setFiles(prev => [...prev, ...newFiles])} externalFiles={files} />
+          </div>
 
           {error && <p className={styles.errorText}>{error}</p>}
 

@@ -61,3 +61,19 @@
 .deleteButton:hover {
   background-color: #c82333;
 }
+
+.fileLinks {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fileLink {
+  color: #007bff;
+  text-decoration: none;
+  font-size: 0.9em;
+}
+
+.fileLink:hover {
+  text-decoration: underline;
+}

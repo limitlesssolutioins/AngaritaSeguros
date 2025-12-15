@@ -1,23 +1,34 @@
 .navbar {
   background-color: #003440; /* Dark background for the dashboard navbar */
-  padding: 0.5rem 0; /* Removed horizontal padding */
+  padding: 0.5rem 0;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  position: sticky; /* Keep it at the top */
+  top: 0;
+  z-index: 100;
 }
 
 .container {
   display: flex;
-  justify-content: space-between; /* Space between nav items and logout */
+  justify-content: space-between;
   align-items: center;
-  padding: 0 1rem; /* Add some padding to the ends */
+  padding: 0 1rem;
   width: 100%;
+  overflow-x: hidden; /* Prevent container scroll, handle in navItems */
 }
 
 .navItems {
   display: flex;
-  justify-content: center;
   align-items: center;
   gap: 0.5rem;
-  flex-grow: 1; /* Allow nav items to take up available space */
+  flex-grow: 1;
+  overflow-x: auto; /* Allow horizontal scrolling */
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  padding-bottom: 5px; /* Space for scrollbar if visible */
+  scrollbar-width: none; /* Firefox: Hide scrollbar */
+}
+
+.navItems::-webkit-scrollbar {
+  display: none; /* Chrome/Safari: Hide scrollbar */
 }
 
 .navLink {
@@ -27,20 +38,22 @@
   border-radius: 0.25rem;
   transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
   display: flex;
-  flex-direction: column; /* Stack icon and text vertically */
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
-  min-width: 80px; /* Give a uniform width to each button */
-  font-size: 0.75rem; /* Smaller font for the text */
+  min-width: 80px;
+  flex-shrink: 0; /* Prevent shrinking */
+  font-size: 0.75rem;
   background: none;
   border: none;
   cursor: pointer;
+  white-space: nowrap; /* Keep text on one line */
 }
 
 .navIcon {
-  margin-bottom: 0.3rem; /* Space between icon and text */
-  font-size: 1.4rem; /* Slightly larger icon */
+  margin-bottom: 0.3rem;
+  font-size: 1.4rem;
 }
 
 .navLink:hover {
@@ -49,15 +62,31 @@
 }
 
 .activeNavLink {
-  background-color: #0a9396; /* Highlight color for active link */
+  background-color: #0a9396;
   font-weight: bold;
 }
 
 .logoutButton {
-  margin-left: auto; /* Push to the right if needed, though space-between handles it */
-  border-left: 1px solid rgba(255,255,255,0.1); /* Separator */
+  margin-left: 1rem; /* Add spacing from nav items */
+  border-left: 1px solid rgba(255,255,255,0.1);
+  padding-left: 1rem;
 }
 
 .logoutButton:hover {
-  background-color: #ae2012; /* Red for logout */
+  background-color: #ae2012;
+}
+
+@media (max-width: 768px) {
+  .navLink {
+    min-width: 60px; /* Smaller width on mobile */
+    padding: 0.4rem;
+  }
+  
+  .navLink span {
+    font-size: 0.65rem; /* Smaller text on mobile */
+  }
+
+  .navIcon {
+    font-size: 1.2rem;
+  }
 }

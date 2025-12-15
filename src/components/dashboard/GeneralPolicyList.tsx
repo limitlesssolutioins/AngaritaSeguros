@@ -58,6 +58,7 @@ const GeneralPolicyList: React.FC<GeneralPolicyListProps> = ({ policies, isLoadi
               <th>Total a Pagar</th>
               <th>Financiado</th>
               <th>Financiera</th>
+              <th>Archivos</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -80,6 +81,25 @@ const GeneralPolicyList: React.FC<GeneralPolicyListProps> = ({ policies, isLoadi
                 <td>{policy.valorTotalAPagar.toLocaleString('es-CO', { style: 'currency', currency: 'COP' })}</td>
                 <td>{policy.financiado ? 'Sí' : 'No'}</td>
                 <td>{policy.financiera ?? 'N/A'}</td>
+                <td>
+                  {policy.files && policy.files.length > 0 ? (
+                    <div className={styles.fileLinks}>
+                      {policy.files.map((fileUrl, index) => (
+                        <a 
+                          key={index} 
+                          href={`/api/files/view?url=${encodeURIComponent(fileUrl)}`}
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className={styles.fileLink}
+                        >
+                          Ver PDF {index + 1}
+                        </a>
+                      ))}
+                    </div>
+                  ) : (
+                    'Sin archivos'
+                  )}
+                </td>
                 <td>
                   <button onClick={() => onEdit(policy.id)} className={styles.actionButton}>Editar</button>
                   <button onClick={() => onDelete(policy.id)} className={`${styles.actionButton} ${styles.deleteButton}`}>Eliminar</button>

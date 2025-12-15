@@ -49,6 +49,7 @@ const PolicyList: React.FC<PolicyListProps> = ({ policies, isLoading, error, onE
               <th>Nº Póliza</th>
               <th>Tipo de Póliza</th>
               <th>No. Anexo</th>
+              <th>Archivos</th>
               <th>Fecha Inicio Vigencia</th>
               <th>Fecha Fin Vigencia</th>
               <th>Valor Prima Neta</th>
@@ -67,6 +68,25 @@ const PolicyList: React.FC<PolicyListProps> = ({ policies, isLoading, error, onE
                 <td>{policy.numeroPoliza}</td>
                 <td>{policy.tipoPoliza}</td>
                 <td>{policy.numeroAnexos ?? 'N/A'}</td>
+                <td>
+                  {policy.files && policy.files.length > 0 ? (
+                    <div className={styles.fileLinks}>
+                      {policy.files.map((fileUrl, index) => (
+                        <a 
+                          key={index} 
+                          href={`/api/files/view?url=${encodeURIComponent(fileUrl)}`}
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className={styles.fileLink}
+                        >
+                          Ver PDF {index + 1}
+                        </a>
+                      ))}
+                    </div>
+                  ) : (
+                    'Sin archivos'
+                  )}
+                </td>
                 <td>{new Date(policy.fechaInicioVigencia).toLocaleDateString()}</td>
                 <td>{new Date(policy.fechaTerminacionVigencia).toLocaleDateString()}</td>
                 <td>{policy.valorPrimaNeta.toLocaleString('es-CO', { style: 'currency', currency: 'COP' })}</td>

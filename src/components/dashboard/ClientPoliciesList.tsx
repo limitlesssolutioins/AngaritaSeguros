@@ -12,6 +12,8 @@ interface Policy {
   fechaFinVigencia: string;
   valorTotalAPagar: number;
   financiado: boolean;
+  files?: string[];
+  type?: string; // Optional type for debugging or styling
 }
 
 interface ClientPoliciesListProps {
@@ -30,12 +32,46 @@ export default function ClientPoliciesList({ clientId }: ClientPoliciesListProps
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`/api/policies?clientId=${clientId}`);
-        if (!res.ok) {
-          throw new Error('Error al cargar las pólizas del cliente');
+        const [generalRes, cumplimientoRes] = await Promise.all([
+            fetch(`/api/policies?clientId=${clientId}`),
+            fetch(`/api/cumplimiento?clientId=${clientId}`)
+        ]);
+
+        let combinedPolicies: Policy[] = [];
+
+        if (generalRes.ok) {
+            const generalData = await generalRes.json();
+            const mappedGeneral = generalData.map((p: any) => ({
+                id: p.id,
+                numeroPoliza: p.numeroPoliza,
+                ramo: p.ramo,
+                aseguradora: p.aseguradora,
+                fechaFinVigencia: p.fechaFinVigencia,
+                valorTotalAPagar: p.valorTotalAPagar,
+                financiado: p.financiado,
+                files: p.files,
+                type: 'General'
+            }));
+            combinedPolicies = [...combinedPolicies, ...mappedGeneral];
         }
-        const data = await res.json();
-        setPolicies(data);
+
+        if (cumplimientoRes.ok) {
+            const cumplimientoData = await cumplimientoRes.json();
+            const mappedCumplimiento = cumplimientoData.map((p: any) => ({
+                id: p.id,
+                numeroPoliza: p.numeroPoliza,
+                ramo: p.tipoPoliza || 'Cumplimiento',
+                aseguradora: p.aseguradora,
+                fechaFinVigencia: p.fechaTerminacionVigencia,
+                valorTotalAPagar: p.valorTotalAPagar,
+                financiado: false, // Cumplimiento usually doesn't have this field exposed same way
+                files: p.files,
+                type: 'Cumplimiento'
+            }));
+            combinedPolicies = [...combinedPolicies, ...mappedCumplimiento];
+        }
+
+        setPolicies(combinedPolicies);
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -45,6 +81,25 @@ export default function ClientPoliciesList({ clientId }: ClientPoliciesListProps
 
     fetchPolicies();
   }, [clientId]);
+
+  const handleDelete = async (policyId: string, type: string) => {
+    if (!confirm('¿Está seguro de eliminar esta póliza?')) return;
+
+    try {
+      const endpoint = type === 'General' ? `/api/policies/${policyId}` : `/api/cumplimiento/${policyId}`;
+      const res = await fetch(endpoint, { method: 'DELETE' });
+      
+      if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.message || 'Error al eliminar la póliza');
+      }
+      
+      setPolicies(prev => prev.filter(p => p.id !== policyId));
+      alert('Póliza eliminada exitosamente');
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
 
   const columns = useMemo<ColumnDef<Policy>[]>(
     () => [
@@ -69,6 +124,41 @@ export default function ClientPoliciesList({ clientId }: ClientPoliciesListProps
             {info.getValue() ? 'Sí' : 'No'}
           </span>
         ),
+      },
+      {
+        accessorKey: 'files',
+        header: 'Archivos',
+        cell: info => {
+          const files = info.getValue() as string[];
+          if (!files || files.length === 0) return 'Sin archivos';
+          return (
+            <div className={styles.fileLinks}>
+              {files.map((fileUrl, index) => (
+                <a 
+                  key={index} 
+                  href={`/api/files/view?url=${encodeURIComponent(fileUrl)}`}
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className={styles.fileLink}
+                >
+                  Ver PDF {index + 1}
+                </a>
+              ))}
+            </div>
+          );
+        },
+      },
+      {
+        id: 'actions',
+        header: 'Acciones',
+        cell: info => (
+          <button 
+            className={styles.deleteButton}
+            onClick={() => handleDelete(info.row.original.id, info.row.original.type || 'General')}
+          >
+            Eliminar
+          </button>
+        )
       },
     ],
     []

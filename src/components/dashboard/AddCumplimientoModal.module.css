@@ -223,7 +223,63 @@
   margin-top: 0.5rem;
 }
 
+.searchInfo {
+  font-size: 0.85rem;
+  color: #007bff;
+  margin-top: 0.5rem;
+}
+
 .readOnlyInput {
   background-color: #e9ecef;
   cursor: not-allowed;
+}
+
+.existingFilesList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  margin-bottom: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.existingFileItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.existingFileItem:last-child {
+  border-bottom: none;
+}
+
+.existingFileItem a {
+  color: #007bff;
+  text-decoration: none;
+}
+
+.existingFileItem a:hover {
+  text-decoration: underline;
+}
+
+.deleteFileButton {
+  background: none;
+  border: 1px solid #dc3545;
+  color: #dc3545;
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.deleteFileButton:hover {
+  background-color: #dc3545;
+  color: white;
+}
+
+.addMoreFiles p {
+    margin-bottom: 0.5rem;
+    font-weight: 500;
 }

@@ -64,3 +64,35 @@
 .financiadoNo {
   background-color: #e76f51;
 }
+
+.fileLinks {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fileLink {
+  color: #007bff;
+  text-decoration: none;
+  font-size: 0.85em;
+  white-space: nowrap;
+}
+
+.fileLink:hover {
+  text-decoration: underline;
+}
+
+.deleteButton {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background-color 0.2s;
+}
+
+.deleteButton:hover {
+  background-color: #c82333;
+}

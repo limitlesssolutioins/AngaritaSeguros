@@ -75,7 +75,12 @@ export async function DELETE(
 ) {
   const { id } = params;
   try {
-    // Note: You might want to check if this client is linked to any policies before deleting
+    // Check if this client is linked to any policies before deleting
+    const [policyRows]: [any[], any] = await pool.query('SELECT id FROM Policy WHERE clientId = ? LIMIT 1', [id]);
+    if (policyRows.length > 0) {
+        return NextResponse.json({ message: 'No se puede eliminar el cliente porque tiene pólizas asociadas. Elimine las pólizas primero.' }, { status: 409 });
+    }
+
     await pool.query('DELETE FROM Client WHERE id = ?', [id]);
     return NextResponse.json({ message: 'Cliente eliminado exitosamente' }, { status: 200 });
   } catch (error: any) {

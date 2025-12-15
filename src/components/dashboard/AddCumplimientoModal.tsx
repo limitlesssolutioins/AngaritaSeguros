@@ -22,6 +22,7 @@ interface Policy {
   numeroPoliza?: string;
   numeroAnexos?: number;
   tipoPoliza?: string;
+  files?: string[];
 }
 
 interface Option {
@@ -41,9 +42,10 @@ interface AddCumplimientoModalProps {
   onClose: () => void;
   initialData?: Partial<Policy> | null;
   policyToEdit?: Policy | null;
+  initialFile?: File | null; // Add prop definition
 }
 
-const AddCumplimientoModal: React.FC<AddCumplimientoModalProps> = ({ onClose, initialData, policyToEdit }) => {
+const AddCumplimientoModal: React.FC<AddCumplimientoModalProps> = ({ onClose, initialData, policyToEdit, initialFile }) => {
   const isEditMode = !!policyToEdit;
 
   const [formData, setFormData] = useState({
@@ -63,6 +65,7 @@ const AddCumplimientoModal: React.FC<AddCumplimientoModalProps> = ({ onClose, in
   const [etiquetaCliente, setEtiquetaCliente] = useState<Option | null>(null);
   const [aseguradora, setAseguradora] = useState<Option | null>(null);
   const [files, setFiles] = useState<File[]>([]);
+  const [existingFiles, setExistingFiles] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -89,17 +92,84 @@ const AddCumplimientoModal: React.FC<AddCumplimientoModalProps> = ({ onClose, in
     fetchUserOffice();
   }, []);
 
+  const handleDeleteExistingFile = async (fileUrl: string) => {
+    if (!confirm('¿Eliminar este archivo? Esta acción no se puede deshacer.')) return;
+    try {
+      const res = await fetch('/api/files/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileUrl,
+          policyId: policyToEdit?.id,
+          type: 'cumplimiento'
+        })
+      });
+
+      if (!res.ok) {
+        throw new Error('Error al eliminar archivo');
+      }
+
+      setExistingFiles(prev => prev.filter(f => f !== fileUrl));
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  const formatCurrency = (value: string | number) => {
+    if (value === '' || value === undefined || value === null) return '';
+    
+    let numberValue: number;
+    if (typeof value === 'string') {
+        // Remove $ and spaces
+        let clean = value.replace(/[$\s]/g, '');
+        // Remove dots (thousands)
+        clean = clean.replace(/\./g, '');
+        // Replace comma with dot for parsing
+        clean = clean.replace(',', '.');
+        
+        numberValue = parseFloat(clean);
+    } else {
+        numberValue = value;
+    }
+
+    if (isNaN(numberValue)) return '';
+
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    }).format(numberValue);
+  };
+
+  const parseCurrencyValue = (value: string) => {
+      if (!value) return '';
+      // Remove $ and spaces
+      let clean = value.replace(/[$\s]/g, '');
+      // Remove dots (thousands)
+      clean = clean.replace(/\./g, '');
+      return clean;
+  };
+
   useEffect(() => {
+    // Set initial file if provided
+    if (initialFile) {
+        setFiles([initialFile]);
+    }
+
     const data = policyToEdit || initialData;
     if (data) {
+      if (data.files) {
+        setExistingFiles(data.files);
+      }
       setFormData(prev => ({
         ...prev,
         clientNombreCompleto: data.clientNombreCompleto || '',
         clientNumeroIdentificacion: data.clientNumeroIdentificacion || '',
         tipoIdentificacion: data.tipoIdentificacion || '',
         numeroPoliza: data.numeroPoliza || '',
-        valorPrimaNeta: data.valorPrimaNeta?.toString() || '',
-        valorTotalAPagar: data.valorTotalAPagar?.toString() || '',
+        valorPrimaNeta: data.valorPrimaNeta ? formatCurrency(data.valorPrimaNeta) : '',
+        valorTotalAPagar: data.valorTotalAPagar ? formatCurrency(data.valorTotalAPagar) : '',
         fechaExpedicion: data.fechaExpedicion ? new Date(data.fechaExpedicion).toISOString().split('T')[0] : prev.fechaExpedicion,
         fechaInicioVigencia: data.fechaInicioVigencia ? new Date(data.fechaInicioVigencia).toISOString().split('T')[0] : prev.fechaInicioVigencia,
         fechaTerminacionVigencia: data.fechaTerminacionVigencia ? new Date(data.fechaTerminacionVigencia).toISOString().split('T')[0] : prev.fechaTerminacionVigencia,
@@ -133,6 +203,18 @@ const AddCumplimientoModal: React.FC<AddCumplimientoModalProps> = ({ onClose, in
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { id, value } = e.target;
     setFormData((prev) => ({ ...prev, [id]: value }));
+  };
+  
+  const handleCurrencyFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    const raw = parseCurrencyValue(value);
+    setFormData(prev => ({ ...prev, [id]: raw }));
+  };
+
+  const handleCurrencyBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    const formatted = formatCurrency(value);
+    setFormData(prev => ({ ...prev, [id]: formatted }));
   };
 
   const debounce = (func: (...args: any[]) => void, delay: number) => {
@@ -240,8 +322,14 @@ const AddCumplimientoModal: React.FC<AddCumplimientoModalProps> = ({ onClose, in
       data.append('fechaInicioVigencia', formData.fechaInicioVigencia);
       data.append('fechaTerminacionVigencia', formData.fechaTerminacionVigencia);
       data.append('aseguradora', aseguradora.label);
-      data.append('valorPrimaNeta', formData.valorPrimaNeta);
-      data.append('valorTotalAPagar', formData.valorTotalAPagar);
+      
+      // Parse currency values back to numbers for submission
+      const valorPrimaNetaClean = parseCurrencyValue(formData.valorPrimaNeta).replace(',', '.');
+      const valorTotalAPagarClean = parseCurrencyValue(formData.valorTotalAPagar).replace(',', '.');
+      
+      data.append('valorPrimaNeta', valorPrimaNetaClean);
+      data.append('valorTotalAPagar', valorTotalAPagarClean);
+      
       data.append('numeroPoliza', formData.numeroPoliza);
       data.append('numeroAnexos', formData.numeroAnexos);
       data.append('tipoPoliza', formData.tipoPoliza);
@@ -392,11 +480,25 @@ const AddCumplimientoModal: React.FC<AddCumplimientoModalProps> = ({ onClose, in
           <div className={styles.formRow}>
             <div className={styles.formGroup}>
               <label htmlFor="valorPrimaNeta">Valor Prima Neta</label>
-              <input type="number" id="valorPrimaNeta" value={formData.valorPrimaNeta} onChange={handleChange} />
+              <input 
+                type="text" 
+                id="valorPrimaNeta" 
+                value={formData.valorPrimaNeta} 
+                onChange={handleChange} 
+                onFocus={handleCurrencyFocus}
+                onBlur={handleCurrencyBlur}
+              />
             </div>
             <div className={styles.formGroup}>
               <label htmlFor="valorTotalAPagar">Valor Total a Pagar</label>
-              <input type="number" id="valorTotalAPagar" value={formData.valorTotalAPagar} onChange={handleChange} />
+              <input 
+                type="text" 
+                id="valorTotalAPagar" 
+                value={formData.valorTotalAPagar} 
+                onChange={handleChange} 
+                onFocus={handleCurrencyFocus}
+                onBlur={handleCurrencyBlur}
+              />
             </div>
              <div className={styles.formGroup}>
                 <label htmlFor="numeroAnexos">No. Anexo</label>
@@ -404,12 +506,31 @@ const AddCumplimientoModal: React.FC<AddCumplimientoModalProps> = ({ onClose, in
             </div>
           </div>
 
-          {!isEditMode && (
-            <div className={styles.formGroup}>
-              <label>Adjuntar Archivos</label>
-              <Dropzone onFilesAccepted={setFiles} />
-            </div>
-          )}
+          <div className={styles.formGroup}>
+            <label>Adjuntar Archivos</label>
+            
+            {isEditMode && existingFiles.length > 0 && (
+              <ul className={styles.existingFilesList}>
+                {existingFiles.map((fileUrl, index) => (
+                  <li key={index} className={styles.existingFileItem}>
+                    <a href={`/api/files/view?url=${encodeURIComponent(fileUrl)}`} target="_blank" rel="noreferrer">
+                      Archivo {index + 1}
+                    </a>
+                    <button 
+                      type="button" 
+                      className={styles.deleteFileButton}
+                      onClick={() => handleDeleteExistingFile(fileUrl)}
+                      style={{ marginLeft: '10px', color: 'red', cursor: 'pointer' }}
+                    >
+                      Eliminar
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <Dropzone onFilesAccepted={(newFiles) => setFiles(prev => [...prev, ...newFiles])} externalFiles={files} />
+          </div>
 
           {error && <p className={styles.errorText}>{error}</p>}
 

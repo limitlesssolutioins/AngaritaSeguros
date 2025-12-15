@@ -40,6 +40,7 @@ const PolicyModule = () => {
   const [extractedData, setExtractedData] = useState<Partial<GeneralPolicy> | null>(null);
   const [debugText, setDebugText] = useState<string>('');
   const [policyToEdit, setPolicyToEdit] = useState<GeneralPolicy | null>(null);
+  const [fileToUpload, setFileToUpload] = useState<File | null>(null); // State for the file
 
   // State for filters
   const [etiquetas, setEtiquetas] = useState<any[]>([]); // Assuming these are "Etiqueta Cliente"
@@ -117,6 +118,7 @@ const PolicyModule = () => {
   const handleOpenModal = () => {
     setExtractedData(null);
     setPolicyToEdit(null);
+    setFileToUpload(null);
     setIsModalOpen(true);
   }
 
@@ -124,8 +126,11 @@ const PolicyModule = () => {
     setIsModalOpen(false);
     setPolicyToEdit(null);
     setExtractedData(null);
+    setFileToUpload(null);
     fetchPolicies(); // Refetch policies when modal closes
   };
+  
+  // ...
 
   const handleEditPolicy = async (policyId: string) => {
     try {
@@ -166,6 +171,7 @@ const PolicyModule = () => {
   const handleFileDrop = async (files: File[]) => {
     if (files.length === 0) return;
     const file = files[0];
+    setFileToUpload(file); // Store the file
     
     const formData = new FormData();
     formData.append('file', file);
@@ -283,7 +289,7 @@ const PolicyModule = () => {
           onDelete={handleDeletePolicy}
         />
       </div>
-      {isModalOpen && <AddPolicyModal onClose={handleCloseModal} initialData={extractedData} policyToEdit={policyToEdit}/>}
+      {isModalOpen && <AddPolicyModal onClose={handleCloseModal} initialData={extractedData} policyToEdit={policyToEdit} initialFile={fileToUpload}/>}
     </>
   )
 };

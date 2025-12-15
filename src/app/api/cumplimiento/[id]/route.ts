@@ -144,14 +144,17 @@ export async function DELETE(
   }
 
   try {
-    // First, check if the policy exists
-    const [policyRows]: [any[], any] = await pool.query('SELECT * FROM Policy WHERE id = ?', [id]);
+    // First, check if the policy exists and if it has files
+    const [policyRows]: [any[], any] = await pool.query('SELECT files FROM Policy WHERE id = ?', [id]);
 
     if (policyRows.length === 0) {
       return NextResponse.json({ message: 'Póliza no encontrada' }, { status: 404 });
     }
 
-    // TODO: Add logic here to delete associated files from the filesystem if necessary
+    const files = JSON.parse(policyRows[0].files || '[]');
+    if (files.length > 0) {
+        return NextResponse.json({ message: 'No se puede eliminar la póliza porque tiene archivos adjuntos. Por favor, elimine los archivos primero.' }, { status: 409 });
+    }
 
     // Delete the policy from the database
     await pool.query('DELETE FROM Policy WHERE id = ?', [id]);

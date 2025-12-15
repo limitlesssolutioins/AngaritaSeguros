@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 import { pool } from '@/lib/db'; // Import the mysql2 connection pool
 import { customAlphabet } from 'nanoid'; // For generating CUIDs
+import { uploadFileToS3 } from '@/lib/s3'; // Import S3 upload function
 
 const nanoid = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyz', 12); // Simulating CUIDs
 
@@ -89,15 +89,9 @@ export async function POST(request: Request) {
     // --- File Upload Logic ---
     const uploadedFilePaths: string[] = [];
     if (files && files.length > 0) {
-      const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'policies');
-      await mkdir(uploadDir, { recursive: true });
       for (const file of files) {
-        const bytes = await file.arrayBuffer();
-        const buffer = Buffer.from(bytes);
-        const uniqueFilename = `${Date.now()}-${file.name}`;
-        const filePath = path.join(uploadDir, uniqueFilename);
-        await writeFile(filePath, buffer);
-        uploadedFilePaths.push(`/uploads/policies/${uniqueFilename}`);
+        const s3Url = await uploadFileToS3(file, 'policies'); // Upload to 'policies' folder in S3
+        uploadedFilePaths.push(s3Url);
       }
     }
 
